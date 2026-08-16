@@ -18,7 +18,11 @@ import { OfflineService } from '@src/app/services/offline.service'
 import { ProductService } from '@src/app/services/product.service'
 import { ShoppingListEntryService } from '@src/app/services/shopping-list-entry.service'
 import { UnitsService } from '@src/app/services/units.service'
-import { getAllUnitsQueryKey, getProductByIdMainQueryKey, getShoppingListMainQueryKey } from '@src/app/util/constants'
+import {
+  getAllUnitsQueryKey,
+  getProductByIdMainQueryKey,
+  getShoppingListMainQueryKey
+} from '@src/app/util/constants'
 import {
   CustomUnit,
   DirectlyEditableListEntryField,
@@ -278,15 +282,6 @@ export class EntryEditionModal {
     ]
   }
 
-  constructor() {
-    effect(() => {
-      if (!this.open()) {
-        this.currentlyEditedField.set(null)
-        this.entryEditionModel.set(this.defaultEntryEditionModel())
-      }
-    })
-  }
-
   handleClickPencilOnDirectlyEditableField(fieldName: DirectlyEditableListEntryField): void {
     this.currentlyEditedField.set(fieldName)
     if (fieldName !== 'unit')
@@ -295,5 +290,14 @@ export class EntryEditionModal {
         nativeElement?.focus()
         nativeElement?.select()
       }, 10)
+  }
+
+  constructor() {
+    effect(() => {
+      if (!this.open()) {
+        this.currentlyEditedField.set(null)
+        this.entryEditionModel.set(this.defaultEntryEditionModel())
+      }
+    })
   }
 }

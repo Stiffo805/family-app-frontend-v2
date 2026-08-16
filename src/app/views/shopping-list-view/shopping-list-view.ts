@@ -55,7 +55,7 @@ const availableSorting: AvailableSorting[] = [
   ],
   template: `
     <div [className]="'bg-blue2 pt-12 pb-6 flex flex-col items-center min-h-screen'">
-      <h1 [className]="'text-3xl font-bold pb-6'">{{ data()?.title }}</h1>
+      <h1 [className]="'text-3xl font-bold pb-6'">{{ shoppingList()?.title }}</h1>
       <div [className]="'bg-white w-[90vw] max-w-220 rounded-lg'">
         <div [className]="'flex p-4'">
           <app-primary-button
@@ -134,12 +134,12 @@ const availableSorting: AvailableSorting[] = [
     />
     <app-product-choice-modal
       [(open)]="productChoiceModalOpen"
-      [shoppingListData]="data()"
+      [shoppingListData]="shoppingList()"
       [(productAdditionModel)]="entryAdditionModel"
     />
     <app-entry-edition-modal
       [(open)]="entryEditionModalOpen"
-      [shoppingListId]="data()?.id"
+      [shoppingListId]="shoppingList()?.id"
       [entry]="editedEntry()"
     />
   `,
@@ -151,7 +151,7 @@ export class ShoppingListView {
   shoppingListService = inject(ShoppingListService)
   shoppingListEntryService = inject(ShoppingListEntryService)
   offlineService = inject(OfflineService)
-  
+
   queryClient = inject(QueryClient)
 
   getShoppingListQuery = injectQuery(() => ({
@@ -178,37 +178,32 @@ export class ShoppingListView {
     }
   }))
 
-  data = computed(() => mapShoppingListRecordToShoppingList(this.getShoppingListQuery.data()))
+  currentSortingIndex = signal<number>(0)
+
+  entryAdditionModalOpen = signal<boolean>(false)
+  productChoiceModalOpen = signal<boolean>(false)
+  entryEditionModalOpen = signal<boolean>(false)
+  editedEntry = signal<ShoppingListEntry | undefined>(undefined)
+
+  entryAdditionModel = linkedSignal<AddProductToListFormData>(() => ({
+    ...defaultAddProductToListFormData,
+    shoppingListId: this.shoppingList()?.id ?? ''
+  }))
+
+  shoppingList = computed(() =>
+    mapShoppingListRecordToShoppingList(this.getShoppingListQuery.data())
+  )
 
   entriesSorted = computed(() => {
     const sorting = this.currentSorting()
-    const items = this.data()?.items ?? []
+    const items = this.shoppingList()?.items ?? []
 
     return items
       .map((item) => mapShoppingListEntryRecordToShoppingListEntry(item))
       .sort((entry1, entry2) => this.sortingFunction(entry1, entry2, sorting))
   })
 
-  currentSortingIndex = signal<number>(0)
-
-  entryAdditionModalOpen = signal<boolean>(false)
-  productChoiceModalOpen = signal<boolean>(false)
-  entryEditionModalOpen = signal<boolean>(false)
-
-  entryAdditionModel = linkedSignal<AddProductToListFormData>(() => ({
-    ...defaultAddProductToListFormData,
-    shoppingListId: this.data()?.id ?? ''
-  }))
-
-  editedEntry = signal<ShoppingListEntry | undefined>(undefined)
-
-  constructor() {
-    effect(() => {
-      if (!this.entryAdditionModalOpen()) {
-        this.entryAdditionModel.set(defaultAddProductToListFormData)
-      }
-    })
-  }
+  currentSorting = computed(() => availableSorting[this.currentSortingIndex()])
 
   sortingFunction = (
     entry1: ShoppingListEntry,
@@ -243,8 +238,6 @@ export class ShoppingListView {
     }
   }
 
-  currentSorting = computed(() => availableSorting[this.currentSortingIndex()])
-
   changeCurrentSorting = () => {
     if (this.currentSortingIndex() >= availableSorting.length - 1) {
       this.currentSortingIndex.set(0)
@@ -254,4 +247,12 @@ export class ShoppingListView {
   }
 
   formatDatetimeHelper = formatDatetime
+
+  constructor() {
+    effect(() => {
+      if (!this.entryAdditionModalOpen()) {
+        this.entryAdditionModel.set(defaultAddProductToListFormData)
+      }
+    })
+  }
 }

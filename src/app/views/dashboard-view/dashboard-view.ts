@@ -159,12 +159,14 @@ const availableChangelogItemsLimits: number[] = [10, 20, 30, 40, 50, 60, 70, 80,
   styleUrl: './dashboard-view.css'
 })
 export class DashboardView {
-  protected layoutService = inject(LayoutService)
-  protected shoppingListService = inject(ShoppingListService)
+  layoutService = inject(LayoutService)
+  shoppingListService = inject(ShoppingListService)
   changelogService = inject(ChangelogService)
   offlineService = inject(OfflineService)
 
   queryClient = inject(QueryClient)
+
+  getUsernameQuery = injectQuery(() => getUsernameOptions)
 
   latestChangelogEntriesQuery = injectQuery(() => ({
     queryKey: [getLatestChangelogEntriesMainQueryKey, this.changelogItemsLimit()],
@@ -184,13 +186,38 @@ export class DashboardView {
     }
   }))
 
+  createShoppingListMutation = injectMutation(() => ({
+    mutationFn: () => {
+      return this.shoppingListService.createShoppingList(this.newShoppingListModel())
+    },
+    onSuccess: () => {
+      this.queryClient.invalidateQueries({
+        queryKey: [getAllShoppingListsMainQueryKey]
+      })
+      this.createShoppingListModalOpen.set(false)
+    }
+  }))
+
   changelogItemsLimitIndex = signal<number>(0)
+  shoppingListsSaved = signal<boolean>(false)
+
+  changeUsernameModalOpen = signal<boolean>(false)
+  createShoppingListModalOpen = signal<boolean>(false)
+
+  newShoppingListModel = signal<CreateShoppingListFormData>({
+    title: ''
+  })
+
+  usernameModel = linkedSignal<{ username: string }>(() => ({
+    username: this.getUsernameQuery.data() ?? ''
+  }))
+
+  usernameForm = form(this.usernameModel)
+  newShoppingListForm = form(this.newShoppingListModel)
 
   changelogItemsLimit = computed(
     () => availableChangelogItemsLimits[this.changelogItemsLimitIndex()]
   )
-
-  shoppingListsSaved = signal<boolean>(false)
 
   changelogEntries = computed(() =>
     this.latestChangelogEntriesQuery
@@ -201,22 +228,6 @@ export class DashboardView {
   shoppingLists = computed(() =>
     this.shoppingListsQuery.data()?.items.map((item) => mapShoppingListRecordToShoppingList(item))
   )
-
-  getUsernameQuery = injectQuery(() => getUsernameOptions)
-
-  changeUsernameModalOpen = signal<boolean>(false)
-  createShoppingListModalOpen = signal<boolean>(false)
-
-  usernameModel = linkedSignal<{ username: string }>(() => ({
-    username: this.getUsernameQuery.data() ?? ''
-  }))
-
-  newShoppingListModel = signal<CreateShoppingListFormData>({
-    title: ''
-  })
-
-  usernameForm = form(this.usernameModel)
-  newShoppingListForm = form(this.newShoppingListModel)
 
   changeUsernameModalFooter: FooterConfig = {
     rightButtons: [
@@ -240,18 +251,6 @@ export class DashboardView {
       }
     ]
   }
-
-  createShoppingListMutation = injectMutation(() => ({
-    mutationFn: () => {
-      return this.shoppingListService.createShoppingList(this.newShoppingListModel())
-    },
-    onSuccess: () => {
-      this.queryClient.invalidateQueries({
-        queryKey: [getAllShoppingListsMainQueryKey]
-      })
-      this.createShoppingListModalOpen.set(false)
-    }
-  }))
 
   newShoppingListModalFooter: FooterConfig = {
     rightButtons: [

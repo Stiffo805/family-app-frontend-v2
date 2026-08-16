@@ -48,12 +48,6 @@ export class LoginView {
   offlineService = inject(OfflineService)
   queryClient = inject(QueryClient)
 
-  loginModel = signal<LoginFormData>({
-    password: ''
-  })
-
-  loginForm = form(this.loginModel)
-
   loginMutation = injectMutation(() => ({
     mutationFn: () => {
       localStorage.setItem(LOCAL_STORAGE_PASSWORD_KEY_NAME, this.loginModel().password)
@@ -68,6 +62,12 @@ export class LoginView {
     },
     refetchOnMount: true
   }))
+
+  loginModel = signal<LoginFormData>({
+    password: ''
+  })
+
+  loginForm = form(this.loginModel)
 
   constructor() {
     effect(() => {

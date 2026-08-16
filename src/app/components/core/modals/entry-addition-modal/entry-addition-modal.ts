@@ -190,11 +190,11 @@ export class EntryAdditionModal {
   queryClient = inject(QueryClient)
 
   allUnitsQuery = injectQuery(() => ({
-      queryKey: [getAllUnitsQueryKey],
-      queryFn: () => {
-        return this.unitsService.getAllUnits()
-      }
-    }))
+    queryKey: [getAllUnitsQueryKey],
+    queryFn: () => {
+      return this.unitsService.getAllUnits()
+    }
+  }))
 
   getProductByIdQuery = injectQuery(() => ({
     queryKey: [getProductByIdMainQueryKey, this.entryAdditionModel().productId],
@@ -257,14 +257,6 @@ export class EntryAdditionModal {
     ]
   }
 
-  constructor() {
-    effect(() => {
-      if (!this.open()) {
-        this.currentlyEditedField.set(null)
-      }
-    })
-  }
-
   handleClickPencilOnChooseProduct() {
     this.openChooseProductModal.emit()
     this.currentlyEditedField.set(null)
@@ -278,5 +270,13 @@ export class EntryAdditionModal {
         nativeElement?.focus()
         nativeElement?.select()
       }, 10)
+  }
+
+  constructor() {
+    effect(() => {
+      if (!this.open()) {
+        this.currentlyEditedField.set(null)
+      }
+    })
   }
 }

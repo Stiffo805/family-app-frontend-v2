@@ -93,22 +93,20 @@ export class ProductChoiceModal {
         queryKey: [getProductsMainQueryKey]
       })
       this.productAdditionModel.update((cur) => ({
-        ...cur, 
+        ...cur,
         productId: data.item.id
       }))
       this.open.set(false)
     }
   }))
 
-  availableProducts = computed(() => this.getProductsQuery.data()?.items ?? [])
-
-  capitalizeHelper = capitalize
-
   open = model.required<boolean>()
   shoppingListData = input<ShoppingList>()
   productAdditionModel = model.required<AddProductToListFormData>()
 
   searchText = signal<string>('')
+
+  availableProducts = computed(() => this.getProductsQuery.data()?.items ?? [])
 
   availableProductsFilteredAndSorted = computed(() =>
     this.availableProducts()
@@ -149,4 +147,6 @@ export class ProductChoiceModal {
       this.open.set(false)
     }
   }
+
+  capitalizeHelper = capitalize
 }
