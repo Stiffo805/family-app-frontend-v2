@@ -1,5 +1,5 @@
 import { HttpHandlerFn, HttpRequest } from '@angular/common/http'
-import { environment } from '@src/environments/environment.development'
+import { environment } from '@src/environments/environment'
 
 export const baseUrlInterceptor = (req: HttpRequest<unknown>, next: HttpHandlerFn) => {
 
