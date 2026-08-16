@@ -35,7 +35,7 @@ import {
 import { OfflineService } from '@src/app/services/offline.service'
 import { ChangelogService } from '@src/app/services/changelog.service'
 
-const availableChangelogItemsLimits: number[] = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+const availableChangelogItemsLimits: number[] = [3, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
 
 @Component({
   selector: 'app-dashboard-view',
