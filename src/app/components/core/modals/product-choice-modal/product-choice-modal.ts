@@ -38,7 +38,7 @@ import { injectMutation, injectQuery, QueryClient } from '@tanstack/angular-quer
           >
             <p [className]="'font-bold'">{{ capitalizeHelper(searchText()) }}</p>
             <p>
-              <i> Dodaj </i>
+              <i> Wybierz </i>
             </p>
           </div>
         }
@@ -58,7 +58,7 @@ import { injectMutation, injectQuery, QueryClient } from '@tanstack/angular-quer
                 @if (isProductOnList(product)) {
                   Już na liście!
                 } @else {
-                  Dodaj
+                  Wybierz
                 }
               </i>
             </p>

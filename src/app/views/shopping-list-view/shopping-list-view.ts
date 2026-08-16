@@ -187,7 +187,7 @@ export class ShoppingListView {
 
   entryAdditionModel = linkedSignal<AddProductToListFormData>(() => ({
     ...defaultAddProductToListFormData,
-    shoppingListId: this.shoppingList()?.id ?? ''
+    shoppingListId: this.id() ?? null
   }))
 
   shoppingList = computed(() =>
@@ -251,7 +251,10 @@ export class ShoppingListView {
   constructor() {
     effect(() => {
       if (!this.entryAdditionModalOpen()) {
-        this.entryAdditionModel.set(defaultAddProductToListFormData)
+        this.entryAdditionModel.set({
+          ...defaultAddProductToListFormData,
+          shoppingListId: this.id() ?? null
+        })
       }
     })
   }

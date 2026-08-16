@@ -10,7 +10,7 @@ export type ChangelogEntryRecord = {
   product?: Product
   changeTitle: string
   createdAt: string
-  author: string
+  author?: string
 }
 
 export type ChangelogEntry = {
@@ -19,7 +19,7 @@ export type ChangelogEntry = {
   product?: Product
   changeTitle: string
   createdAt: Date
-  author: string
+  author?: string
 }
 
 export type ShoppingList = {

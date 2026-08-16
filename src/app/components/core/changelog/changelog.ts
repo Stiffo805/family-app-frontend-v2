@@ -18,17 +18,28 @@ import { ChangelogEntry, ChangelogEntryRecord } from '@src/app/util/types'
             </p>
             <p>
               Produkt:
-              <strong [className]="'text-green1 font-bold'">{{ entry.product?.name ?? 'Nie dotyczy' }}</strong>
+              <strong [className]="'text-green1 font-bold'">{{
+                entry.product?.name ?? 'Nie dotyczy'
+              }}</strong>
             </p>
             <p>
               Zmiana: <strong>{{ entry.changeTitle }}</strong>
             </p>
             <p>
               Data wydarzenia:
-              <strong [className]="'text-purple1'">{{ formatDatetimeHelper(entry.createdAt) }}</strong>
+              <strong [className]="'text-purple1'">{{
+                formatDatetimeHelper(entry.createdAt)
+              }}</strong>
             </p>
             <p>
-              Użytkownik: <strong>{{ entry.author }}</strong>
+              Użytkownik:
+              <strong>
+                @if (entry.author && entry.author !== '') {
+                  {{ entry.author }}
+                } @else {
+                  -
+                }
+              </strong>
             </p>
           </div>
         } @empty {
@@ -60,7 +71,13 @@ import { ChangelogEntry, ChangelogEntryRecord } from '@src/app/util/types'
                 <td [className]="'text-center py-2 text-purple1'">
                   {{ formatDatetimeHelper(entry.createdAt) }}
                 </td>
-                <td [className]="'text-center py-2'">{{ entry.author }}</td>
+                <td [className]="'text-center py-2'">
+                  @if (entry.author && entry.author !== '') {
+                    {{ entry.author }}
+                  } @else {
+                    -
+                  }
+                </td>
               </tr>
             }
           </tbody>

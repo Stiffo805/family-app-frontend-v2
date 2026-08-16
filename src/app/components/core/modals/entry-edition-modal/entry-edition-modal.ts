@@ -263,21 +263,24 @@ export class EntryEditionModal {
       {
         text: 'Usuń',
         customClass: 'bg-red-300',
-        click: () => this.deleteEntryMutation.mutate()
+        click: () => this.deleteEntryMutation.mutate(),
+        disabled: this.editEntryMutation.isPending() || this.deleteEntryMutation.isPending()
       }
     ],
     rightButtons: [
       {
         text: 'Anuluj',
         customClass: 'bg-red-700',
-        click: () => this.open.set(false)
+        click: () => this.open.set(false),
+        disabled: this.editEntryMutation.isPending() || this.deleteEntryMutation.isPending()
       },
       {
         text: 'Zapisz',
         customClass: 'bg-green2',
         click: () => {
           this.editEntryMutation.mutate()
-        }
+        },
+        disabled: this.editEntryMutation.isPending() || this.deleteEntryMutation.isPending()
       }
     ]
   }

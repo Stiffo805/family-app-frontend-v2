@@ -245,14 +245,16 @@ export class EntryAdditionModal {
       {
         text: 'Anuluj',
         customClass: 'bg-red-700',
-        click: () => this.open.set(false)
+        click: () => this.open.set(false),
+        disabled: this.addShoppingListEntryMutation.isPending()
       },
       {
         text: 'Dodaj',
         customClass: 'bg-green2',
         click: () => {
           this.addShoppingListEntryMutation.mutate()
-        }
+        },
+        disabled: this.addShoppingListEntryMutation.isPending()
       }
     ]
   }
