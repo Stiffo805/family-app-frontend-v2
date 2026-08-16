@@ -25,10 +25,14 @@ export class ShoppingListEntryService {
   }
 
   deleteShoppingListEntry = (entryId: string) => {
+    const username = localStorage.getItem(LOCAL_STORAGE_USERNAME_KEY_NAME) ?? ''
+
     return lastValueFrom(
-      this.httpClient.delete(
-        `/shopping-list-entries/${entryId}?username=${localStorage.getItem(LOCAL_STORAGE_USERNAME_KEY_NAME)}`
-      )
+      this.httpClient.delete(`/shopping-list-entries/${entryId}`, {
+        params: {
+          username: username
+        }
+      })
     )
   }
 }
