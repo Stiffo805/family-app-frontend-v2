@@ -34,99 +34,108 @@ import {
 } from '@src/app/util/helpers'
 import { OfflineService } from '@src/app/services/offline.service'
 import { ChangelogService } from '@src/app/services/changelog.service'
+import { Spinner } from '@src/app/components/common/spinner/spinner'
 
 const availableChangelogItemsLimits: number[] = [3, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
 
 @Component({
   selector: 'app-dashboard-view',
-  imports: [NgIcon, NgClass, Changelog, RouterLink, PrimaryButton, Modal, FormField],
+  imports: [NgIcon, NgClass, Changelog, RouterLink, PrimaryButton, Modal, FormField, Spinner],
   template: `
     <div [className]="'bg-blue2 pb-6 min-h-screen'">
-      <div [className]="'p-4 flex gap-2 items-center'">
-        <p>
-          Nazwa urządzenia/użytkownika:
-          <strong>{{ getUsernameQuery.data() ? getUsernameQuery.data() : 'Brak' }}</strong>
-        </p>
-        <ng-icon
-          name="bootstrapPencil"
-          [className]="'cursor-pointer'"
-          size="14"
-          (click)="changeUsernameModalOpen.set(true)"
-        />
-      </div>
-      <hr />
-      <div [className]="'flex justify-center gap-2 items-center pb-6 pt-12'">
-        <h1 [className]="'text-center text-3xl font-semibold'">Historia zmian</h1>
-      </div>
-
-      <app-changelog [data]="changelogEntries()" />
-      @if (changelogEntries()) {
-        <div [className]="'flex justify-center'">
-          <app-primary-button
-            text="Pokaż więcej"
-            iconName="bootstrapPlusLg"
-            customClass="bg-green2 mt-4"
-            (onClick)="handleIncreaseChangelogItemsLimit($event)"
+      @if (
+        !getUsernameQuery.isPending() &&
+        !latestChangelogEntriesQuery.isPending() &&
+        !shoppingListsQuery.isPending()
+      ) {
+        <div [className]="'p-4 flex gap-2 items-center'">
+          <p>
+            Nazwa urządzenia/użytkownika:
+            <strong>{{ getUsernameQuery.data() ? getUsernameQuery.data() : 'Brak' }}</strong>
+          </p>
+          <ng-icon
+            name="bootstrapPencil"
+            [className]="'cursor-pointer'"
+            size="14"
+            (click)="changeUsernameModalOpen.set(true)"
           />
         </div>
-      }
+        <hr />
+        <div [className]="'flex justify-center gap-2 items-center pb-6 pt-12'">
+          <h1 [className]="'text-center text-3xl font-semibold'">Historia zmian</h1>
+        </div>
 
-      <h1
-        [className]="'text-center text-3xl font-semibold pb-6 pt-18'"
-        id="shopping-lists-container"
-      >
-        Listy zakupów
-      </h1>
-      <div [className]="'flex flex-col items-center pb-6 gap-4'">
-        <app-primary-button
-          text="Utwórz listę"
-          iconName="bootstrapPlusLg"
-          customClass="bg-green2"
-          (onClick)="createShoppingListModalOpen.set(true)"
-          [disabled]="offlineService.isOfflineMode()"
-        />
-        @if (!!shoppingLists()?.length && !offlineService.isOfflineMode()) {
-          <app-primary-button
-            text="Zapisz/zaktualizuj listy offline"
-            iconName="bootstrapSave"
-            customClass="bg-gray-300"
-            (onClick)="saveShoppingListsToLocalStorage()"
-            [disabled]="shoppingListsSaved()"
-          />
-        }
-      </div>
-      <div
-        [ngClass]="{
-          'flex flex-wrap gap-6': true,
-          'justify-center': this.layoutService.isMobile(),
-          'px-6': !this.layoutService.isMobile()
-        }"
-      >
-        @for (shoppingList of shoppingLists(); track shoppingList?.title) {
-          <div
-            [ngClass]="{
-              'bg-blue-200 min-w-100 py-4 px-6 rounded-lg flex flex-col gap-2 cursor-pointer': true,
-              'w-6/7': layoutService.isMobile(),
-              'w-[calc(33%-var(--spacing)*3)]': !layoutService.isMobile()
-            }"
-            [routerLink]="['/shopping-list', shoppingList?.id]"
-          >
-            <p [className]="'text-2xl text-blue1'">
-              <strong>{{ shoppingList?.title }}</strong>
-            </p>
-            <p [className]="'text-md'">
-              Data ostatniej modyfikacji:
-              <strong [className]="'text-purple1'">{{
-                formatDatetimeHelper(shoppingList?.lastUpdatedAt)
-              }}</strong>
-            </p>
+        <app-changelog [data]="changelogEntries()" />
+        @if (changelogEntries()) {
+          <div [className]="'flex justify-center'">
+            <app-primary-button
+              text="Pokaż więcej"
+              iconName="bootstrapPlusLg"
+              customClass="bg-green2 mt-4"
+              (onClick)="handleIncreaseChangelogItemsLimit($event)"
+            />
           </div>
-        } @empty {
-          <p [className]="'text-center text-lg pb-4 w-full'">
-            Nie utworzono jeszcze żadnej listy zakupów.
-          </p>
         }
-      </div>
+
+        <h1
+          [className]="'text-center text-3xl font-semibold pb-6 pt-18'"
+          id="shopping-lists-container"
+        >
+          Listy zakupów
+        </h1>
+        <div [className]="'flex flex-col items-center pb-6 gap-4'">
+          <app-primary-button
+            text="Utwórz listę"
+            iconName="bootstrapPlusLg"
+            customClass="bg-green2"
+            (onClick)="createShoppingListModalOpen.set(true)"
+            [disabled]="offlineService.isOfflineMode()"
+          />
+          @if (!!shoppingLists()?.length && !offlineService.isOfflineMode()) {
+            <app-primary-button
+              text="Zapisz/zaktualizuj listy offline"
+              iconName="bootstrapSave"
+              customClass="bg-gray-300"
+              (onClick)="saveShoppingListsToLocalStorage()"
+              [disabled]="shoppingListsSaved()"
+            />
+          }
+        </div>
+        <div
+          [ngClass]="{
+            'flex flex-wrap gap-6': true,
+            'justify-center': this.layoutService.isMobile(),
+            'px-6': !this.layoutService.isMobile()
+          }"
+        >
+          @for (shoppingList of shoppingLists(); track shoppingList?.title) {
+            <div
+              [ngClass]="{
+                'bg-blue-200 min-w-100 py-4 px-6 rounded-lg flex flex-col gap-2 cursor-pointer': true,
+                'w-6/7': layoutService.isMobile(),
+                'w-[calc(33%-var(--spacing)*3)]': !layoutService.isMobile()
+              }"
+              [routerLink]="['/shopping-list', shoppingList?.id]"
+            >
+              <p [className]="'text-2xl text-blue1'">
+                <strong>{{ shoppingList?.title }}</strong>
+              </p>
+              <p [className]="'text-md'">
+                Data ostatniej modyfikacji:
+                <strong [className]="'text-purple1'">{{
+                  formatDatetimeHelper(shoppingList?.lastUpdatedAt)
+                }}</strong>
+              </p>
+            </div>
+          } @empty {
+            <p [className]="'text-center text-lg pb-4 w-full'">
+              Nie utworzono jeszcze żadnej listy zakupów.
+            </p>
+          }
+        </div>
+      } @else {
+        <app-spinner />
+      }
     </div>
     <app-modal
       [(open)]="changeUsernameModalOpen"

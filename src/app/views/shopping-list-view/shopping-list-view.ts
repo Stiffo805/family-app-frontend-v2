@@ -26,6 +26,7 @@ import {
 import { ShoppingListEntryService } from '@src/app/services/shopping-list-entry.service'
 import { NgClass } from '@angular/common'
 import { OfflineService } from '@src/app/services/offline.service'
+import { Spinner } from '@src/app/components/common/spinner/spinner'
 
 type AvailableSorting = {
   label: string
@@ -51,80 +52,87 @@ const availableSorting: AvailableSorting[] = [
     EntryAdditionModal,
     ProductChoiceModal,
     EntryEditionModal,
-    NgClass
+    NgClass,
+    Spinner
   ],
   template: `
     <div [className]="'bg-blue2 pt-12 pb-6 flex flex-col items-center min-h-screen'">
-      <h1 [className]="'text-3xl font-bold pb-6'">{{ shoppingList()?.title }}</h1>
-      <div [className]="'bg-white w-[90vw] max-w-220 rounded-lg'">
-        <div [className]="'flex p-4'">
-          <app-primary-button
-            text="Dodaj produkt"
-            iconName="bootstrapPlusLg"
-            (onClick)="setProductAdditionModalOpen(true)"
-            customClass="bg-green2"
-            [disabled]="offlineService.isOfflineMode()"
-          />
-        </div>
-        <div [className]="'p-4 pt-2'">
-          <div [className]="'flex flex-wrap gap-4 items-center'">
+      @if (!getShoppingListQuery.isPending()) {
+        <h1 [className]="'text-3xl font-bold pb-6'">{{ shoppingList()?.title }}</h1>
+        <div [className]="'bg-white w-[90vw] max-w-220 rounded-lg'">
+          <div [className]="'flex p-4'">
             <app-primary-button
-              text="Przełącz sortowanie"
-              customClass="bg-amber-300"
-              (onClick)="changeCurrentSorting()"
+              text="Dodaj produkt"
+              iconName="bootstrapPlusLg"
+              (onClick)="setProductAdditionModalOpen(true)"
+              customClass="bg-green2"
+              [disabled]="offlineService.isOfflineMode()"
             />
           </div>
-          <div [className]="'flex items-center pt-4'">
-            <i>Obecne sortowanie: {{ currentSorting().label }}</i>
-          </div>
-        </div>
-        <hr />
-        @for (entry of entriesSorted(); track entry.id; let isLast = $last) {
-          <div
-            [ngClass]="{
-              'p-4 flex items-center justify-between': true,
-              'opacity-50': entry.isChecked
-            }"
-          >
-            <div [className]="'max-w-[calc(100%-50px)]'">
-              <p [className]="'flex flex-wrap text-xl'">
-                <span [className]="'text-green1 font-bold'">{{ entry.product.name }}</span>
-                @if (entry.quantity) {
-                  &nbsp;-&nbsp;
-                  <span
-                    >{{ entry.quantity }}
-                    @if (entry.unit) {
-                      {{ entry.unit }}
-                    }
-                  </span>
-                }
-              </p>
-              <p [className]="'italic text-red-700'">{{ entry.extraNotes }}</p>
-              <p [className]="'italic text-gray-700'">
-                {{ formatDatetimeHelper(entry.lastUpdatedAt) }}
-              </p>
-            </div>
-            <div [className]="'flex items-center gap-8'">
-              <ng-icon
-                name="bootstrapPencil"
-                [className]="'cursor-pointer'"
-                (click)="handleEditEntryClick(entry)"
-              />
-              <input
-                [type]="'checkbox'"
-                [className]="'size-6'"
-                [checked]="entry.isChecked"
-                (click)="handleClickCheck($event, entry)"
+          <div [className]="'p-4 pt-2'">
+            <div [className]="'flex flex-wrap gap-4 items-center'">
+              <app-primary-button
+                text="Przełącz sortowanie"
+                customClass="bg-amber-300"
+                (onClick)="changeCurrentSorting()"
               />
             </div>
+            <div [className]="'flex items-center pt-4'">
+              <i>Obecne sortowanie: {{ currentSorting().label }}</i>
+            </div>
           </div>
-          @if (!isLast) {
-            <hr />
+          <hr />
+          @for (entry of entriesSorted(); track entry.id; let isLast = $last) {
+            <div
+              [ngClass]="{
+                'p-4 flex items-center justify-between': true,
+                'opacity-50': entry.isChecked
+              }"
+            >
+              <div [className]="'max-w-[calc(100%-50px)]'">
+                <p [className]="'flex flex-wrap text-xl'">
+                  <span [className]="'text-green1 font-bold'">{{ entry.product.name }}</span>
+                  @if (entry.quantity) {
+                    &nbsp;-&nbsp;
+                    <span
+                      >{{ entry.quantity }}
+                      @if (entry.unit) {
+                        {{ entry.unit }}
+                      }
+                    </span>
+                  }
+                </p>
+                <p [className]="'italic text-red-700'">{{ entry.extraNotes }}</p>
+                <p [className]="'italic text-gray-700'">
+                  {{ formatDatetimeHelper(entry.lastUpdatedAt) }}
+                </p>
+              </div>
+              <div [className]="'flex items-center gap-8'">
+                <ng-icon
+                  name="bootstrapPencil"
+                  [className]="'cursor-pointer'"
+                  (click)="handleEditEntryClick(entry)"
+                />
+                <input
+                  [type]="'checkbox'"
+                  [className]="'size-6'"
+                  [checked]="entry.isChecked"
+                  (click)="handleClickCheck($event, entry)"
+                />
+              </div>
+            </div>
+            @if (!isLast) {
+              <hr />
+            }
+          } @empty {
+            <p [className]="'text-center text-lg py-4'">
+              Nie dodano jeszcze produktów do tej listy.
+            </p>
           }
-        } @empty {
-          <p [className]="'text-center text-lg py-4'">Nie dodano jeszcze produktów do tej listy.</p>
-        }
-      </div>
+        </div>
+      } @else {
+        <app-spinner />
+      }
     </div>
     <app-entry-addition-modal
       [(open)]="entryAdditionModalOpen"
