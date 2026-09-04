@@ -44,9 +44,10 @@ const availableChangelogItemsLimits: number[] = [3, 10, 20, 30, 40, 50, 60, 70, 
   template: `
     <div [className]="'bg-blue2 pb-6 min-h-screen'">
       @if (
-        !getUsernameQuery.isPending() &&
-        !latestChangelogEntriesQuery.isPending() &&
-        !shoppingListsQuery.isPending()
+        offlineService.isOfflineMode() ||
+        (!getUsernameQuery.isPending() &&
+          !latestChangelogEntriesQuery.isPending() &&
+          !shoppingListsQuery.isPending())
       ) {
         <div [className]="'p-4 flex gap-2 items-center'">
           <p>
@@ -64,8 +65,14 @@ const availableChangelogItemsLimits: number[] = [3, 10, 20, 30, 40, 50, 60, 70, 
         <div [className]="'flex justify-center gap-2 items-center pb-6 pt-12'">
           <h1 [className]="'text-center text-3xl font-semibold'">Historia zmian</h1>
         </div>
+        @if (!offlineService.isOfflineMode()) {
+          <app-changelog [data]="changelogEntries()" />
+        } @else {
+          <p [className]="'text-center text-lg py-4'">
+            Niedostępne w trybie offline.
+          </p>
+        }
 
-        <app-changelog [data]="changelogEntries()" />
         @if (changelogEntries()) {
           <div [className]="'flex justify-center'">
             <app-primary-button

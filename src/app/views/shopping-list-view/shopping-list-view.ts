@@ -57,7 +57,7 @@ const availableSorting: AvailableSorting[] = [
   ],
   template: `
     <div [className]="'bg-blue2 pt-12 pb-6 flex flex-col items-center min-h-screen'">
-      @if (!getShoppingListQuery.isPending()) {
+      @if (offlineService.isOfflineMode() || !getShoppingListQuery.isPending()) {
         <h1 [className]="'text-3xl font-bold pb-6'">{{ shoppingList()?.title }}</h1>
         <div [className]="'bg-white w-[90vw] max-w-220 rounded-lg'">
           <div [className]="'flex p-4'">
