@@ -235,7 +235,10 @@ export class DashboardView {
   )
 
   shoppingLists = computed(() =>
-    this.shoppingListsQuery.data()?.items.map((item) => mapShoppingListRecordToShoppingList(item))
+    this.shoppingListsQuery
+      .data()
+      ?.items.map((item) => mapShoppingListRecordToShoppingList(item))
+      .sort((list1, list2) => list1?.title.localeCompare(list2?.title ?? '') ?? 1)
   )
 
   changeUsernameModalFooter: FooterConfig = {
