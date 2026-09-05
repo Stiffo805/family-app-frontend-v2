@@ -67,21 +67,19 @@ const availableChangelogItemsLimits: number[] = [3, 10, 20, 30, 40, 50, 60, 70, 
         </div>
         @if (!offlineService.isOfflineMode()) {
           <app-changelog [data]="changelogEntries()" />
-        } @else {
-          <p [className]="'text-center text-lg py-4'">
-            Niedostępne w trybie offline.
-          </p>
-        }
 
-        @if (changelogEntries()) {
-          <div [className]="'flex justify-center'">
-            <app-primary-button
-              text="Pokaż więcej"
-              iconName="bootstrapPlusLg"
-              customClass="bg-green2 mt-4"
-              (onClick)="handleIncreaseChangelogItemsLimit($event)"
-            />
-          </div>
+          @if (changelogEntries()) {
+            <div [className]="'flex justify-center'">
+              <app-primary-button
+                text="Pokaż więcej"
+                iconName="bootstrapPlusLg"
+                customClass="bg-green2 mt-4"
+                (onClick)="handleIncreaseChangelogItemsLimit($event)"
+              />
+            </div>
+          }
+        } @else {
+          <p [className]="'text-center text-lg py-4'">Niedostępne w trybie offline.</p>
         }
 
         <h1
