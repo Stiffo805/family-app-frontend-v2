@@ -1,9 +1,11 @@
 import { Component, effect, inject } from '@angular/core'
+import { toObservable } from '@angular/core/rxjs-interop'
 import { Router, RouterOutlet } from '@angular/router'
 import { TopBar } from '@src/app/components/navigation/top-bar/top-bar'
 import { AuthService } from '@src/app/services/auth.service'
 import { OfflineService } from '@src/app/services/offline.service'
 import { injectMutation, QueryClient } from '@tanstack/angular-query-experimental'
+import { switchMap } from 'rxjs'
 
 @Component({
   selector: 'app-main-layout',
@@ -28,12 +30,18 @@ export class MainLayout {
   }))
 
   constructor() {
-    this.checkPassMutation.mutate()
+    toObservable(this.offlineService.isOfflineMode)
+      .pipe(
+        switchMap(async (isOfflineMode) => {
+          if (isOfflineMode) return
 
-    effect(() => {
-      if (!this.offlineService.isOfflineMode() && this.checkPassMutation.error()) {
-        this.router.navigate(['/login'])
-      }
-    })
+          try {
+            await this.checkPassMutation.mutateAsync()
+          } catch (error) {
+            this.router.navigate(['/login'])
+          }
+        })
+      )
+      .subscribe()
   }
 }

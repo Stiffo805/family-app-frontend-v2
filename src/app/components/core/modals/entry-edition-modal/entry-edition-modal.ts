@@ -181,10 +181,11 @@ export class EntryEditionModal {
   queryClient = inject(QueryClient)
 
   allUnitsQuery = injectQuery(() => ({
-    queryKey: [getAllUnitsQueryKey],
+    queryKey: [getAllUnitsQueryKey, this.offlineService.isOfflineMode()],
     queryFn: () => {
       return this.unitsService.getAllUnits()
-    }
+    },
+    enabled: () => !this.offlineService.isOfflineMode()
   }))
 
   getProductByIdQuery = injectQuery(() => ({

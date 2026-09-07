@@ -1,5 +1,5 @@
 import { NgClass } from '@angular/common'
-import { Component, computed, inject, input, model, signal } from '@angular/core'
+import { Component, computed, effect, inject, input, model, signal } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { NgIcon } from '@ng-icons/core'
 import { Modal } from '@src/app/components/core/modal/modal'
@@ -75,7 +75,7 @@ export class ProductChoiceModal {
   queryClient = inject(QueryClient)
 
   getProductsQuery = injectQuery(() => ({
-    queryKey: [getProductsMainQueryKey],
+    queryKey: [getProductsMainQueryKey, this.offlineService.isOfflineMode()],
     queryFn: () => {
       return this.productService.getAllProducts()
     },
@@ -149,4 +149,12 @@ export class ProductChoiceModal {
   }
 
   capitalizeHelper = capitalize
+
+  constructor() {
+    effect(() => {
+      if (!this.open()) {
+        this.searchText.set('')
+      }
+    })
+  }
 }

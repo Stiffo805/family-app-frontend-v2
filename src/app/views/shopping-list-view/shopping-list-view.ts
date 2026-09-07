@@ -163,7 +163,7 @@ export class ShoppingListView {
   queryClient = inject(QueryClient)
 
   getShoppingListQuery = injectQuery(() => ({
-    queryKey: [getShoppingListMainQueryKey, this.id()],
+    queryKey: [getShoppingListMainQueryKey, this.id(), this.offlineService.isOfflineMode()],
     queryFn: () => {
       if (this.offlineService.isOfflineMode()) {
         return getLocalShoppingLists().find((item) => item.id === this.id())

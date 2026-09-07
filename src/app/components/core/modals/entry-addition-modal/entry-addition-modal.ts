@@ -39,7 +39,7 @@ import { injectMutation, injectQuery, QueryClient } from '@tanstack/angular-quer
       [title]="'Dodawanie produktu do listy'"
       [(open)]="open"
       [extraOpenCondition]="extraOpenCondition()"
-      [footer]="footer"
+      [footer]="footer()"
     >
       <div [className]="'flex flex-col gap-2'">
         <!-- PRODUCT INPUT  -->
@@ -190,14 +190,15 @@ export class EntryAdditionModal {
   queryClient = inject(QueryClient)
 
   allUnitsQuery = injectQuery(() => ({
-    queryKey: [getAllUnitsQueryKey],
+    queryKey: [getAllUnitsQueryKey, this.offlineService.isOfflineMode()],
     queryFn: () => {
       return this.unitsService.getAllUnits()
-    }
+    },
+    enabled: () => !this.offlineService.isOfflineMode()
   }))
 
   getProductByIdQuery = injectQuery(() => ({
-    queryKey: [getProductByIdMainQueryKey, this.entryAdditionModel().productId],
+    queryKey: [getProductByIdMainQueryKey, this.entryAdditionModel().productId, this.offlineService.isOfflineMode()],
     queryFn: () => {
       return this.productService.getProductById(this.entryAdditionModel().productId ?? undefined)
     },
@@ -240,7 +241,7 @@ export class EntryAdditionModal {
     extraNotes: this.extraNotesInputElement
   }
 
-  footer: FooterConfig = {
+  footer: Signal<FooterConfig> = computed(() => ({
     rightButtons: [
       {
         text: 'Anuluj',
@@ -254,10 +255,11 @@ export class EntryAdditionModal {
         click: () => {
           this.addShoppingListEntryMutation.mutate()
         },
-        disabled: this.addShoppingListEntryMutation.isPending()
+        disabled:
+          this.addShoppingListEntryMutation.isPending() || !this.entryAdditionModel().productId
       }
     ]
-  }
+  }))
 
   handleClickPencilOnChooseProduct() {
     this.openChooseProductModal.emit()

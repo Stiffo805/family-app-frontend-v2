@@ -183,15 +183,16 @@ export class DashboardView {
   getUsernameQuery = injectQuery(() => getUsernameOptions)
 
   latestChangelogEntriesQuery = injectQuery(() => ({
-    queryKey: [getLatestChangelogEntriesMainQueryKey, this.changelogItemsLimit()],
+    queryKey: [getLatestChangelogEntriesMainQueryKey, this.changelogItemsLimit(), this.offlineService.isOfflineMode()],
     queryFn: () => {
       return this.changelogService.getLatestEntries(this.changelogItemsLimit())
     },
-    placeholderData: keepPreviousData
+    placeholderData: keepPreviousData,
+    enabled: () => !this.offlineService.isOfflineMode()
   }))
 
   shoppingListsQuery = injectQuery(() => ({
-    queryKey: [getAllShoppingListsMainQueryKey],
+    queryKey: [getAllShoppingListsMainQueryKey, this.offlineService.isOfflineMode()],
     queryFn: () => {
       if (this.offlineService.isOfflineMode()) {
         return { items: getLocalShoppingLists() } as AllShoppingListsResponse
