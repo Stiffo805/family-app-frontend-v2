@@ -15,7 +15,10 @@ import { defaultAddProductToListFormData } from '@src/app/util/defaults'
 import { EntryAdditionModal } from '@src/app/components/core/modals/entry-addition-modal/entry-addition-modal'
 import { EntryEditionModal } from '@src/app/components/core/modals/entry-edition-modal/entry-edition-modal'
 import { injectMutation, injectQuery, QueryClient } from '@tanstack/angular-query-experimental'
-import { getShoppingListMainQueryKey } from '@src/app/util/constants'
+import {
+  getEntriesPositionsMainQueryKey,
+  getShoppingListMainQueryKey
+} from '@src/app/util/constants'
 import { ShoppingListService } from '@src/app/services/shopping-list.service'
 import {
   formatDatetime,
@@ -30,10 +33,14 @@ import { Spinner } from '@src/app/components/common/spinner/spinner'
 
 type AvailableSorting = {
   label: string
-  value: 'alphabetically' | 'timestamp'
+  value: 'alphabetically' | 'timestamp' | 'custom'
 }
 
 const availableSorting: AvailableSorting[] = [
+  {
+    label: 'własne',
+    value: 'custom'
+  },
   {
     label: 'alfabetycznie',
     value: 'alphabetically'
@@ -108,6 +115,14 @@ const availableSorting: AvailableSorting[] = [
                 </p>
               </div>
               <div [className]="'flex items-center gap-8'">
+                @if (currentSorting().value === 'custom') {
+                  <ng-icon
+                    name="heroChevronDoubleUpMicro"
+                    [className]="'cursor-pointer'"
+                    (click)="moveEntryToTopMutation.mutate({ entryId: entry.id })"
+                  />
+                }
+
                 <ng-icon
                   name="bootstrapPencil"
                   [className]="'cursor-pointer'"
@@ -165,10 +180,10 @@ export class ShoppingListView {
   getShoppingListQuery = injectQuery(() => ({
     queryKey: [getShoppingListMainQueryKey, this.id(), this.offlineService.isOfflineMode()],
     queryFn: () => {
-      if (this.offlineService.isOfflineMode()) {
-        return getLocalShoppingLists().find((item) => item.id === this.id())
-      }
-      return this.shoppingListService.getShoppingList(this.id() ?? '')
+      return this.shoppingListService.getShoppingList(
+        this.id() ?? '',
+        this.offlineService.isOfflineMode()
+      )
     }
   }))
 
@@ -182,6 +197,24 @@ export class ShoppingListView {
     onSuccess: () => {
       this.queryClient.invalidateQueries({
         queryKey: [getShoppingListMainQueryKey]
+      })
+    }
+  }))
+
+  entriesPositions = injectQuery(() => ({
+    queryKey: [getEntriesPositionsMainQueryKey, this.id()],
+    queryFn: () => {
+      return this.shoppingListService.getEntriesPositions(this.id())?.idsInOrder
+    }
+  }))
+
+  moveEntryToTopMutation = injectMutation(() => ({
+    mutationFn: ({ entryId }: { entryId: string }) => {
+      return this.shoppingListService.moveEntryToTopPosition(this.id() ?? '', entryId)
+    },
+    onSuccess: () => {
+      this.queryClient.invalidateQueries({
+        queryKey: [getEntriesPositionsMainQueryKey, this.id()]
       })
     }
   }))
@@ -205,10 +238,14 @@ export class ShoppingListView {
   entriesSorted = computed(() => {
     const sorting = this.currentSorting()
     const items = this.shoppingList()?.items ?? []
+    const positions = this.entriesPositions.data() ?? []
+
+    const positionsMap = new Map<string, number>()
+    positions.forEach((id, index) => positionsMap.set(id, index))
 
     return items
       .map((item) => mapShoppingListEntryRecordToShoppingListEntry(item))
-      .sort((entry1, entry2) => this.sortingFunction(entry1, entry2, sorting))
+      .sort((entry1, entry2) => this.sortingFunction(entry1, entry2, sorting, positionsMap))
   })
 
   currentSorting = computed(() => availableSorting[this.currentSortingIndex()])
@@ -216,16 +253,32 @@ export class ShoppingListView {
   sortingFunction = (
     entry1: ShoppingListEntry,
     entry2: ShoppingListEntry,
-    sorting: AvailableSorting
+    sorting: AvailableSorting,
+    positionsMap: Map<string, number>
   ) => {
     if (entry1.isChecked && !entry2.isChecked) return 1
-    else if (entry2.isChecked && !entry1.isChecked) return -1
+    if (entry2.isChecked && !entry1.isChecked) return -1
+
     if (sorting.value === 'alphabetically') {
       return entry1.product.name.localeCompare(entry2.product.name)
     }
+
     if (sorting.value === 'timestamp') {
       return entry2.lastUpdatedAt.getTime() - entry1.lastUpdatedAt.getTime()
-    } else return 1
+    }
+
+    if (sorting.value === 'custom') {
+      const hasEntry1 = positionsMap.has(entry1.id)
+      const hasEntry2 = positionsMap.has(entry2.id)
+
+      if (hasEntry1 && !hasEntry2) return -1
+      if (hasEntry2 && !hasEntry1) return 1
+      if (hasEntry1 && hasEntry2) {
+        return (positionsMap.get(entry1.id) as number) - (positionsMap.get(entry2.id) as number)
+      }
+    }
+
+    return 1
   }
 
   setProductAdditionModalOpen(open: boolean) {

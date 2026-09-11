@@ -1,6 +1,7 @@
 export const LOCAL_STORAGE_PASSWORD_KEY_NAME = 'password'
 export const LOCAL_STORAGE_USERNAME_KEY_NAME = 'username'
 export const LOCAL_STORAGE_SHOPPING_LISTS_KEY_NAME = 'shopping-lists'
+export const LOCAL_STORAGE_ENTRIES_POSITIONS_KEY = 'entries-positions'
 
 export const getAllShoppingListsMainQueryKey = 'get-all-shopping-lists'
 export const getUsernameQueryKey = 'get-username'
@@ -10,3 +11,4 @@ export const getProductByIdMainQueryKey = 'get-product-by-id'
 export const healthMainQueryKey = 'health'
 export const getLatestChangelogEntriesMainQueryKey = 'changelog-latest-entries'
 export const getAllUnitsQueryKey = 'all-units'
+export const getEntriesPositionsMainQueryKey = 'get-entries-positions'

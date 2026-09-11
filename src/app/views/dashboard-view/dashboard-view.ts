@@ -194,10 +194,7 @@ export class DashboardView {
   shoppingListsQuery = injectQuery(() => ({
     queryKey: [getAllShoppingListsMainQueryKey, this.offlineService.isOfflineMode()],
     queryFn: () => {
-      if (this.offlineService.isOfflineMode()) {
-        return { items: getLocalShoppingLists() } as AllShoppingListsResponse
-      }
-      return this.shoppingListService.getAllShoppingLists()
+      return this.shoppingListService.getAllShoppingLists(this.offlineService.isOfflineMode())
     }
   }))
 

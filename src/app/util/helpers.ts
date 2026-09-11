@@ -43,7 +43,9 @@ export const mapShoppingListEntryRecordToShoppingListEntry = (
   }
 }
 
-export const mapChangelogEntryRecordToChangelogEntry = (changelogEntryRecord: ChangelogEntryRecord): ChangelogEntry => {
+export const mapChangelogEntryRecordToChangelogEntry = (
+  changelogEntryRecord: ChangelogEntryRecord
+): ChangelogEntry => {
   return {
     id: changelogEntryRecord.id,
     shoppingList: changelogEntryRecord.shoppingList,
@@ -55,6 +57,11 @@ export const mapChangelogEntryRecordToChangelogEntry = (changelogEntryRecord: Ch
 }
 
 export const getLocalShoppingLists = (): ShoppingListRecord[] => {
-  return JSON.parse(localStorage.getItem(LOCAL_STORAGE_SHOPPING_LISTS_KEY_NAME) ?? '[]') as ShoppingListRecord[]
+  try {
+    return JSON.parse(
+      localStorage.getItem(LOCAL_STORAGE_SHOPPING_LISTS_KEY_NAME) ?? '[]'
+    ) as ShoppingListRecord[]
+  } catch (err) {
+    return []
+  }
 }
-

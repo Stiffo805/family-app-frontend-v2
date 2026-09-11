@@ -107,3 +107,8 @@ export type CheckShoppingListEntryFormData = {
   entryId: string
   checked: boolean
 }
+
+export type EntriesPositions = {
+  shoppingListId: string
+  idsInOrder: string[]
+}

@@ -18,6 +18,7 @@ import { heroHome, heroMinus } from '@ng-icons/heroicons/outline'
 import { ionLogOutOutline } from '@ng-icons/ionicons'
 import { TestConnectionView } from './views/test-connection-view/test-connection-view'
 import { primeSpinner } from '@ng-icons/primeicons'
+import { heroChevronDoubleUpMicro } from '@ng-icons/heroicons/micro'
 
 @Component({
   selector: 'app-root',
@@ -39,7 +40,8 @@ import { primeSpinner } from '@ng-icons/primeicons'
       bootstrapArrowDown,
       bootstrapXLg,
       primeSpinner,
-      bootstrapGlobe
+      bootstrapGlobe,
+      heroChevronDoubleUpMicro
     })
   ]
 })
