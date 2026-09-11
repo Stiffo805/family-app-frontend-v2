@@ -14,7 +14,7 @@ import {
   bootstrapGlobe,
   bootstrapFileMinus
 } from '@ng-icons/bootstrap-icons'
-import { heroHome, heroMinus } from '@ng-icons/heroicons/outline'
+import { heroHome, heroMinus, heroHandRaised } from '@ng-icons/heroicons/outline'
 import { ionLogOutOutline } from '@ng-icons/ionicons'
 import { TestConnectionView } from './views/test-connection-view/test-connection-view'
 import { primeSpinner } from '@ng-icons/primeicons'
@@ -41,7 +41,8 @@ import { heroChevronDoubleUpMicro } from '@ng-icons/heroicons/micro'
       bootstrapXLg,
       primeSpinner,
       bootstrapGlobe,
-      heroChevronDoubleUpMicro
+      heroChevronDoubleUpMicro,
+      heroHandRaised
     })
   ]
 })

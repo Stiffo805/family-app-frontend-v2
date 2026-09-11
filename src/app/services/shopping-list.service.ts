@@ -26,6 +26,65 @@ export class ShoppingListService {
     return lastValueFrom(this.httpClient.get<AllShoppingListsResponse>('/shopping-lists'))
   }
 
+  fillMissingEntriesPositions = async () => {
+    const allShoppingLists = await this.getAllShoppingLists(this.offlineService.isOfflineMode())
+    // 1. Fallback do pustej tablicy gwarantuje, że nie będziemy operować na undefined
+    const allEntriesPositions = (await this.getAllEntriesPositions()) ?? []
+
+    // 2. Tworzymy słownik O(1) obecnych pozycji: Map<shoppingListId, idsInOrder>
+    const positionsMap = new Map<string, string[]>()
+    allEntriesPositions.forEach((pos) => positionsMap.set(pos.shoppingListId, pos.idsInOrder))
+
+    // 3. Budujemy nową, czystą tablicę na podstawie aktualnych list zakupów
+    const newEntriesPositions = allShoppingLists.items.map((shoppingList) => {
+      // Pobieramy stare ID dla tej listy (lub pustą tablicę, jeśli lista jest nowa)
+      const existingIds = positionsMap.get(shoppingList.id) ?? []
+
+      // Set pozwala błyskawicznie sprawdzić (O(1)), czy ID już tam jest
+      const existingIdsSet = new Set(existingIds)
+
+      // Znajdujemy tylko te produkty, których jeszcze nie ma w zapisanych pozycjach
+      const missingIds = shoppingList.items
+        .map((entry) => entry.id)
+        .filter((id) => !existingIdsSet.has(id))
+
+      return {
+        shoppingListId: shoppingList.id,
+        // Łączymy stare pozycje z nowymi (nowe spadają na sam dół)
+        idsInOrder: [...existingIds, ...missingIds]
+      }
+    })
+
+    localStorage.setItem(LOCAL_STORAGE_ENTRIES_POSITIONS_KEY, JSON.stringify(newEntriesPositions))
+  }
+
+  moveEntryPositions = async (
+    shoppingListId: string | undefined,
+    currentIndex: number,
+    previousIndex: number
+  ) => {
+    const entriesPositions = await this.getAllEntriesPositions()
+
+    const newEntriesPositions = entriesPositions?.map((item) => {
+      if (item.shoppingListId !== shoppingListId) {
+        return item
+      } else {
+        let currentIdsInOrder = [...item.idsInOrder]
+
+        const [movedElement] = currentIdsInOrder.splice(previousIndex, 1)
+
+        currentIdsInOrder.splice(currentIndex, 0, movedElement)
+
+        return {
+          ...item,
+          idsInOrder: currentIdsInOrder
+        }
+      }
+    })
+
+    localStorage.setItem(LOCAL_STORAGE_ENTRIES_POSITIONS_KEY, JSON.stringify(newEntriesPositions))
+  }
+
   getShoppingList = async (shoppingListId: string, isOfflineMode: boolean) => {
     if (isOfflineMode) {
       return getLocalShoppingLists().find((item) => item.id === shoppingListId)
@@ -39,16 +98,21 @@ export class ShoppingListService {
     return lastValueFrom(this.httpClient.post('/shopping-lists', formData))
   }
 
-  getEntriesPositions = (shoppingListId: string | undefined) => {
+  getAllEntriesPositions = async () => {
+    try {
+      const entriesPositionsData = JSON.parse(
+        localStorage.getItem(LOCAL_STORAGE_ENTRIES_POSITIONS_KEY) ?? '[]'
+      ) as EntriesPositions[]
+      return entriesPositionsData
+    } catch (err) {
+      return undefined
+    }
+  }
+
+  getEntriesPositions = async (shoppingListId: string | undefined) => {
     if (shoppingListId) {
-      try {
-        const entriesPositionsData = JSON.parse(
-          localStorage.getItem(LOCAL_STORAGE_ENTRIES_POSITIONS_KEY) ?? '[]'
-        ) as EntriesPositions[]
-        return entriesPositionsData.find((item) => item.shoppingListId === shoppingListId)
-      } catch (err) {
-        return undefined
-      }
+      const entriesPositionsData = await this.getAllEntriesPositions()
+      return entriesPositionsData?.find((item) => item.shoppingListId === shoppingListId)
     }
     return undefined
   }

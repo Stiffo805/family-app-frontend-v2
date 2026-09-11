@@ -1,4 +1,14 @@
-import { Component, computed, effect, inject, input, linkedSignal, signal } from '@angular/core'
+import {
+  Component,
+  computed,
+  effect,
+  ElementRef,
+  inject,
+  input,
+  linkedSignal,
+  signal,
+  viewChildren
+} from '@angular/core'
 import { NgIcon } from '@ng-icons/core'
 import { Modal } from '@src/app/components/core/modal/modal'
 import { PrimaryButton } from '@src/app/components/common/primary-button/primary-button'
@@ -30,6 +40,13 @@ import { ShoppingListEntryService } from '@src/app/services/shopping-list-entry.
 import { NgClass } from '@angular/common'
 import { OfflineService } from '@src/app/services/offline.service'
 import { Spinner } from '@src/app/components/common/spinner/spinner'
+import {
+  CdkDrag,
+  CdkDragDrop,
+  CdkDragHandle,
+  CdkDropList,
+  moveItemInArray
+} from '@angular/cdk/drag-drop'
 
 type AvailableSorting = {
   label: string
@@ -60,7 +77,10 @@ const availableSorting: AvailableSorting[] = [
     ProductChoiceModal,
     EntryEditionModal,
     NgClass,
-    Spinner
+    Spinner,
+    CdkDrag,
+    CdkDragHandle,
+    CdkDropList
   ],
   template: `
     <div [className]="'bg-blue2 pt-12 pb-6 flex flex-col items-center min-h-screen'">
@@ -89,61 +109,62 @@ const availableSorting: AvailableSorting[] = [
             </div>
           </div>
           <hr />
-          @for (entry of entriesSorted(); track entry.id; let isLast = $last) {
-            <div
-              [ngClass]="{
-                'p-4 flex items-center justify-between': true,
-                'opacity-50': entry.isChecked
-              }"
-            >
-              <div [className]="'max-w-[calc(100%-50px)]'">
-                <p [className]="'flex flex-wrap text-xl'">
-                  <span [className]="'text-green1 font-bold'">{{ entry.product.name }}</span>
-                  @if (entry.quantity) {
-                    &nbsp;-&nbsp;
-                    <span
-                      >{{ entry.quantity }}
-                      @if (entry.unit) {
-                        {{ entry.unit }}
+          <div cdkDropList (cdkDropListDropped)="drop($event)" [cdkDropListAutoScrollStep]="10">
+            @for (entry of entriesSorted(); track entry.id; let isLast = $last) {
+              <div cdkDrag [cdkDragDisabled]="currentSorting().value !== 'custom'">
+                <div
+                  [ngClass]="{
+                    'p-4 flex items-center justify-between bg-white border-b': true,
+                    'opacity-50': entry.isChecked
+                  }"
+                >
+                  <div [className]="'max-w-[calc(100%-50px)]'">
+                    <p [className]="'flex flex-wrap text-xl'">
+                      <span [className]="'text-green1 font-bold'">{{ entry.product.name }}</span>
+                      @if (entry.quantity) {
+                        &nbsp;-&nbsp;
+                        <span
+                          >{{ entry.quantity }}
+                          @if (entry.unit) {
+                            {{ entry.unit }}
+                          }
+                        </span>
                       }
-                    </span>
-                  }
-                </p>
-                <p [className]="'italic text-red-700'">{{ entry.extraNotes }}</p>
-                <p [className]="'italic text-gray-700'">
-                  {{ formatDatetimeHelper(entry.lastUpdatedAt) }}
-                </p>
-              </div>
-              <div [className]="'flex items-center gap-8'">
-                @if (currentSorting().value === 'custom') {
-                  <ng-icon
-                    name="heroChevronDoubleUpMicro"
-                    [className]="'cursor-pointer'"
-                    (click)="moveEntryToTopMutation.mutate({ entryId: entry.id })"
-                  />
-                }
+                    </p>
+                    <p [className]="'italic text-red-700'">{{ entry.extraNotes }}</p>
+                    <p [className]="'italic text-gray-700'">
+                      {{ formatDatetimeHelper(entry.lastUpdatedAt) }}
+                    </p>
+                  </div>
+                  <div [className]="'flex items-center gap-8'">
+                    <div
+                      cdkDragHandle
+                      class="cursor-grab active:cursor-grabbing items-center justify-center p-2 -m-2"
+                      [ngClass]="currentSorting().value === 'custom' ? 'flex' : 'hidden'"
+                    >
+                      <ng-icon name="heroHandRaised" />
+                    </div>
 
-                <ng-icon
-                  name="bootstrapPencil"
-                  [className]="'cursor-pointer'"
-                  (click)="handleEditEntryClick(entry)"
-                />
-                <input
-                  [type]="'checkbox'"
-                  [className]="'size-6'"
-                  [checked]="entry.isChecked"
-                  (click)="handleClickCheck($event, entry)"
-                />
+                    <ng-icon
+                      name="bootstrapPencil"
+                      [className]="'cursor-pointer'"
+                      (click)="handleEditEntryClick(entry)"
+                    />
+                    <input
+                      [type]="'checkbox'"
+                      [className]="'size-6'"
+                      [checked]="entry.isChecked"
+                      (click)="handleClickCheck($event, entry)"
+                    />
+                  </div>
+                </div>
               </div>
-            </div>
-            @if (!isLast) {
-              <hr />
+            } @empty {
+              <p [className]="'text-center text-lg py-4'">
+                Nie dodano jeszcze produktów do tej listy.
+              </p>
             }
-          } @empty {
-            <p [className]="'text-center text-lg py-4'">
-              Nie dodano jeszcze produktów do tej listy.
-            </p>
-          }
+          </div>
         </div>
       } @else {
         <app-spinner />
@@ -203,8 +224,10 @@ export class ShoppingListView {
 
   entriesPositions = injectQuery(() => ({
     queryKey: [getEntriesPositionsMainQueryKey, this.id()],
-    queryFn: () => {
-      return this.shoppingListService.getEntriesPositions(this.id())?.idsInOrder
+    queryFn: async () => {
+      return this.shoppingListService
+        .getEntriesPositions(this.id())
+        ?.then((result) => result?.idsInOrder)
     }
   }))
 
@@ -215,6 +238,23 @@ export class ShoppingListView {
     onSuccess: () => {
       this.queryClient.invalidateQueries({
         queryKey: [getEntriesPositionsMainQueryKey, this.id()]
+      })
+    }
+  }))
+
+  moveEntryPositionsMutation = injectMutation(() => ({
+    mutationFn: ({
+      currentIndex,
+      previousIndex
+    }: {
+      currentIndex: number
+      previousIndex: number
+    }) => {
+      return this.shoppingListService.moveEntryPositions(this.id(), currentIndex, previousIndex)
+    },
+    onSuccess: () => {
+      this.queryClient.invalidateQueries({
+        queryKey: [getEntriesPositionsMainQueryKey]
       })
     }
   }))
@@ -307,6 +347,24 @@ export class ShoppingListView {
     }
   }
 
+  drop = (event: CdkDragDrop<string[]>) => {
+    if (event.previousIndex === event.currentIndex) return
+
+    const currentSortedList = this.entriesSorted()
+    const draggedEntryId = currentSortedList[event.previousIndex].id
+    const targetEntryId = currentSortedList[event.currentIndex].id
+
+    const rawPositions = this.entriesPositions.data() ?? []
+    const realPreviousIndex = rawPositions.indexOf(draggedEntryId)
+    const realCurrentIndex = rawPositions.indexOf(targetEntryId)
+
+    if (realPreviousIndex !== -1 && realCurrentIndex !== -1) {
+      this.moveEntryPositionsMutation.mutate({
+        currentIndex: realCurrentIndex,
+        previousIndex: realPreviousIndex
+      })
+    }
+  }
   formatDatetimeHelper = formatDatetime
 
   constructor() {
@@ -318,5 +376,6 @@ export class ShoppingListView {
         })
       }
     })
+    this.shoppingListService.fillMissingEntriesPositions()
   }
 }

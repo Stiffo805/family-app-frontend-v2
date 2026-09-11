@@ -17,6 +17,7 @@ import { Modal } from '@src/app/components/core/modal/modal'
 import { OfflineService } from '@src/app/services/offline.service'
 import { ProductService } from '@src/app/services/product.service'
 import { ShoppingListEntryService } from '@src/app/services/shopping-list-entry.service'
+import { ShoppingListService } from '@src/app/services/shopping-list.service'
 import { UnitsService } from '@src/app/services/units.service'
 import {
   getAllUnitsQueryKey,
@@ -184,6 +185,7 @@ import { injectMutation, injectQuery, QueryClient } from '@tanstack/angular-quer
 })
 export class EntryAdditionModal {
   shoppingListEntryService = inject(ShoppingListEntryService)
+  shoppingListService = inject(ShoppingListService)
   productService = inject(ProductService)
   offlineService = inject(OfflineService)
   unitsService = inject(UnitsService)
@@ -198,7 +200,11 @@ export class EntryAdditionModal {
   }))
 
   getProductByIdQuery = injectQuery(() => ({
-    queryKey: [getProductByIdMainQueryKey, this.entryAdditionModel().productId, this.offlineService.isOfflineMode()],
+    queryKey: [
+      getProductByIdMainQueryKey,
+      this.entryAdditionModel().productId,
+      this.offlineService.isOfflineMode()
+    ],
     queryFn: () => {
       return this.productService.getProductById(this.entryAdditionModel().productId ?? undefined)
     },
@@ -209,11 +215,12 @@ export class EntryAdditionModal {
     mutationFn: () => {
       return this.shoppingListEntryService.addShoppingListEntry(this.entryAdditionModel())
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       this.queryClient.invalidateQueries({
         queryKey: [getShoppingListMainQueryKey]
       })
       this.open.set(false)
+      await this.shoppingListService.fillMissingEntriesPositions()
     }
   }))
 

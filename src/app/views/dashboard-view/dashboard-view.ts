@@ -183,7 +183,11 @@ export class DashboardView {
   getUsernameQuery = injectQuery(() => getUsernameOptions)
 
   latestChangelogEntriesQuery = injectQuery(() => ({
-    queryKey: [getLatestChangelogEntriesMainQueryKey, this.changelogItemsLimit(), this.offlineService.isOfflineMode()],
+    queryKey: [
+      getLatestChangelogEntriesMainQueryKey,
+      this.changelogItemsLimit(),
+      this.offlineService.isOfflineMode()
+    ],
     queryFn: () => {
       return this.changelogService.getLatestEntries(this.changelogItemsLimit())
     },
@@ -202,11 +206,12 @@ export class DashboardView {
     mutationFn: () => {
       return this.shoppingListService.createShoppingList(this.newShoppingListModel())
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       this.queryClient.invalidateQueries({
         queryKey: [getAllShoppingListsMainQueryKey]
       })
       this.createShoppingListModalOpen.set(false)
+      await this.shoppingListService.fillMissingEntriesPositions()
     }
   }))
 
@@ -310,4 +315,8 @@ export class DashboardView {
   }
 
   formatDatetimeHelper = formatDatetime
+
+  constructor() {
+    this.shoppingListService.fillMissingEntriesPositions()
+  }
 }
