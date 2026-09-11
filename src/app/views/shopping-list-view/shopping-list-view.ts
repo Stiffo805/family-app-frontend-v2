@@ -111,7 +111,11 @@ const availableSorting: AvailableSorting[] = [
           <hr />
           <div cdkDropList (cdkDropListDropped)="drop($event)" [cdkDropListAutoScrollStep]="10">
             @for (entry of entriesSorted(); track entry.id; let isLast = $last) {
-              <div cdkDrag [cdkDragDisabled]="currentSorting().value !== 'custom'">
+              <div
+                cdkDrag
+                [cdkDragDisabled]="currentSorting().value !== 'custom'"
+                [cdkDragStartDelay]="{ touch: 500, mouse: 0 }"
+              >
                 <div
                   [ngClass]="{
                     'p-4 flex items-center justify-between bg-white border-b': true,
@@ -139,10 +143,16 @@ const availableSorting: AvailableSorting[] = [
                   <div [className]="'flex items-center gap-8'">
                     <div
                       cdkDragHandle
-                      class="cursor-grab active:cursor-grabbing items-center justify-center p-2 -m-2"
+                      class="group relative cursor-grab active:cursor-grabbing items-center justify-center p-2 -m-2"
                       [ngClass]="currentSorting().value === 'custom' ? 'flex' : 'hidden'"
                     >
-                      <ng-icon name="heroHandRaised" />
+                      <div
+                        class="absolute inset-0 bg-blue-200 rounded-full scale-0 opacity-0 transition-all duration-500 ease-linear group-active:scale-100 group-active:opacity-100"
+                      ></div>
+                      <ng-icon
+                        name="heroHandRaised"
+                        class="relative z-10 transition-colors duration-500 group-active:text-blue-700"
+                      />
                     </div>
 
                     <ng-icon
