@@ -175,7 +175,8 @@ const availableSorting: AvailableSorting[] = [
                     >
                       <ng-icon
                         name="heroCheck"
-                        [ngClass]="[entry.isChecked ? 'text-green-500!' : 'text-gray-500!', 'z-5']"
+                        [ngClass]="[entry.isChecked ? 'text-green-500!' : 'text-gray-400!', 'z-5']"
+                        strokeWidth="3"
                       />
                     </div>
                     <!-- <input

@@ -11,7 +11,7 @@
 }
 
 .check-anim::before {
-  @apply bg-green-100 border-t-2 border-t-green-200;
+  @apply bg-green-200 border-t-2 border-t-green-400;
 
   content: "";
   position: absolute;
@@ -25,7 +25,7 @@
 }
 
 .uncheck-anim::before {
-  @apply bg-gray-100 border-t-2 border-t-gray-200;
+  @apply bg-gray-300 border-t-2 border-t-gray-500;
 
   content: "";
   position: absolute;
