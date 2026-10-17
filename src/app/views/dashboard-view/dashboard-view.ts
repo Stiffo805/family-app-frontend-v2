@@ -13,7 +13,7 @@ import {
   LOCAL_STORAGE_SHOPPING_LISTS_KEY_NAME,
   LOCAL_STORAGE_USERNAME_KEY_NAME
 } from '@src/app/util/constants'
-import { CreateShoppingListFormData, FooterConfig } from '@src/app/util/types'
+import { ManageShoppingListFormData, FooterConfig, ShoppingList } from '@src/app/util/types'
 import { form, FormField } from '@angular/forms/signals'
 import {
   injectMutation,
@@ -93,7 +93,7 @@ const availableChangelogItemsLimits: number[] = [3, 10, 20, 30, 40, 50, 60, 70, 
             text="Utwórz listę"
             iconName="bootstrapPlusLg"
             customClass="bg-green2"
-            (onClick)="createShoppingListModalOpen.set(true)"
+            (onClick)="manageShoppingListModalOpen.set(true)"
             [disabled]="offlineService.isOfflineMode()"
           />
           @if (!!shoppingLists()?.length && !offlineService.isOfflineMode()) {
@@ -122,9 +122,15 @@ const availableChangelogItemsLimits: number[] = [3, 10, 20, 30, 40, 50, 60, 70, 
               }"
               [routerLink]="['/shopping-list', shoppingList?.id]"
             >
-              <p [className]="'text-2xl text-blue1'">
-                <strong>{{ shoppingList?.title }}</strong>
-              </p>
+              <div [className]="'flex justify-between'">
+                <p [className]="'text-2xl text-blue1'">
+                  <strong>{{ shoppingList?.title }}</strong>
+                </p>
+                <ng-icon
+                  name="bootstrapPencil"
+                  (click)="handleClickShoppingListEditIcon(shoppingList, $event)"
+                />
+              </div>
               <p [className]="'text-md'">
                 Data ostatniej modyfikacji:
                 <strong [className]="'text-purple1'">{{
@@ -155,17 +161,17 @@ const availableChangelogItemsLimits: number[] = [3, 10, 20, 30, 40, 50, 60, 70, 
       />
     </app-modal>
     <app-modal
-      [(open)]="createShoppingListModalOpen"
-      title="Tworzenie nowej listy zakupów"
-      [footer]="newShoppingListModalFooter"
+      [(open)]="manageShoppingListModalOpen"
+      [title]="editedShoppingListId() ? 'Edytowanie listy zakupów' : 'Tworzenie listy zakupów'"
+      [footer]="manageShoppingListModalFooter()"
     >
       <p [className]="'text-lg pb-2'">Nazwa listy</p>
       <input
         [className]="'bg-white text-lg p-2'"
         placeholder="podaj nazwę listy"
-        [formField]="newShoppingListForm.title"
+        [formField]="manageShoppingListForm.title"
       />
-      @if (createShoppingListMutation.isError()) {
+      @if (createShoppingListMutation.isError() || editShoppingListMutation.isError()) {
         <p [className]="'text-red-700 pt-2'">Istnieje już lista zakupów o tej nazwie</p>
       }
     </app-modal>
@@ -204,14 +210,29 @@ export class DashboardView {
 
   createShoppingListMutation = injectMutation(() => ({
     mutationFn: () => {
-      return this.shoppingListService.createShoppingList(this.newShoppingListModel())
+      return this.shoppingListService.createShoppingList(this.manageShoppingListModel())
     },
     onSuccess: async () => {
       this.queryClient.invalidateQueries({
         queryKey: [getAllShoppingListsMainQueryKey]
       })
-      this.createShoppingListModalOpen.set(false)
+      this.manageShoppingListModalOpen.set(false)
       await this.shoppingListService.fillMissingEntriesPositions()
+    }
+  }))
+
+  editShoppingListMutation = injectMutation(() => ({
+    mutationFn: () => {
+      return this.shoppingListService.editShoppingList(
+        this.editedShoppingListId() ?? '',
+        this.manageShoppingListModel()
+      )
+    },
+    onSuccess: async () => {
+      this.queryClient.invalidateQueries({
+        queryKey: [getAllShoppingListsMainQueryKey]
+      })
+      this.manageShoppingListModalOpen.set(false)
     }
   }))
 
@@ -219,9 +240,10 @@ export class DashboardView {
   shoppingListsSaved = signal<boolean>(false)
 
   changeUsernameModalOpen = signal<boolean>(false)
-  createShoppingListModalOpen = signal<boolean>(false)
+  manageShoppingListModalOpen = signal<boolean>(false)
+  editedShoppingListId = signal<string | undefined>(undefined)
 
-  newShoppingListModel = signal<CreateShoppingListFormData>({
+  manageShoppingListModel = signal<ManageShoppingListFormData>({
     title: ''
   })
 
@@ -230,7 +252,7 @@ export class DashboardView {
   }))
 
   usernameForm = form(this.usernameModel)
-  newShoppingListForm = form(this.newShoppingListModel)
+  manageShoppingListForm = form(this.manageShoppingListModel)
 
   changelogItemsLimit = computed(
     () => availableChangelogItemsLimits[this.changelogItemsLimitIndex()]
@@ -272,26 +294,30 @@ export class DashboardView {
     ]
   }
 
-  newShoppingListModalFooter: FooterConfig = {
+  manageShoppingListModalFooter = linkedSignal(() => ({
     rightButtons: [
       {
         text: 'Anuluj',
         customClass: 'bg-red-700',
         disabled: this.createShoppingListMutation.isPending(),
         click: () => {
-          this.createShoppingListModalOpen.set(false)
+          this.manageShoppingListModalOpen.set(false)
         }
       },
       {
-        text: 'Utwórz',
+        text: this.editedShoppingListId() ? 'Zapisz' : 'Utwórz',
         customClass: 'bg-green2',
         disabled: this.createShoppingListMutation.isPending(),
         click: () => {
-          this.createShoppingListMutation.mutate()
+          if (this.editedShoppingListId()) {
+            this.editShoppingListMutation.mutate()
+          } else {
+            this.createShoppingListMutation.mutate()
+          }
         }
       }
     ]
-  }
+  }))
 
   saveShoppingListsToLocalStorage = () => {
     localStorage.setItem(
@@ -314,9 +340,33 @@ export class DashboardView {
     }
   }
 
+  handleClickShoppingListEditIcon = (shoppingList: ShoppingList | undefined, event: Event) => {
+    event.stopPropagation()
+
+    if (!shoppingList) return
+
+    this.editedShoppingListId.set(shoppingList.id)
+
+    const theList = this.shoppingLists()?.find((item) => item?.id === shoppingList.id)
+
+    this.manageShoppingListModel.set({
+      title: theList?.title ?? ''
+    })
+    this.manageShoppingListModalOpen.set(true)
+  }
+
   formatDatetimeHelper = formatDatetime
 
   constructor() {
     this.shoppingListService.fillMissingEntriesPositions()
+
+    effect(() => {
+      if (!this.manageShoppingListModalOpen()) {
+        this.editedShoppingListId.set(undefined)
+        this.manageShoppingListModel.set({
+          title: ''
+        })
+      }
+    })
   }
 }

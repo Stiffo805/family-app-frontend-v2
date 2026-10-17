@@ -4,7 +4,7 @@ import { OfflineService } from '@src/app/services/offline.service'
 import { LOCAL_STORAGE_ENTRIES_POSITIONS_KEY } from '@src/app/util/constants'
 import { getLocalShoppingLists } from '@src/app/util/helpers'
 import {
-  CreateShoppingListFormData,
+  ManageShoppingListFormData,
   EntriesPositions,
   ShoppingListRecord
 } from '@src/app/util/types'
@@ -94,8 +94,12 @@ export class ShoppingListService {
     )
   }
 
-  createShoppingList = (formData: CreateShoppingListFormData) => {
+  createShoppingList = (formData: ManageShoppingListFormData) => {
     return lastValueFrom(this.httpClient.post('/shopping-lists', formData))
+  }
+
+  editShoppingList = (shoppingListId: string, formData: ManageShoppingListFormData) => {
+    return lastValueFrom(this.httpClient.put(`/shopping-lists/${shoppingListId}`, formData))
   }
 
   getAllEntriesPositions = async () => {

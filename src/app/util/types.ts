@@ -95,7 +95,7 @@ export type EditEntryFormData = {
   extraNotes: string
 }
 
-export type CreateShoppingListFormData = {
+export type ManageShoppingListFormData = {
   title: string
 }
 
