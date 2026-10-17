@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http'
 import { inject, Service } from '@angular/core'
-import { CreateNewProductFormData, Product } from '@src/app/util/types'
+import { CreateNewProductFormData, EditProductFormData, Product } from '@src/app/util/types'
 import { lastValueFrom } from 'rxjs'
 
 export type GetAllProductsResponse = {
@@ -23,11 +23,15 @@ export class ProductService {
     return lastValueFrom(this.httpClient.get<GetAllProductsResponse>('/products/search'))
   }
 
-  getProductById = (product_id: string | undefined) => {
-    return lastValueFrom(this.httpClient.get<GetProductResponse>(`/products/${product_id}`))
+  getProductById = (productId: string | undefined) => {
+    return lastValueFrom(this.httpClient.get<GetProductResponse>(`/products/${productId}`))
   }
 
   createNewProduct = (formData: CreateNewProductFormData) => {
     return lastValueFrom(this.httpClient.post<CreateNewProductResponse>("/products", formData))
+  }
+
+  editProduct = (productId: string, formData: EditProductFormData) => {
+    return lastValueFrom(this.httpClient.put<EditProductFormData>(`/products/${productId}`, formData))
   }
 }

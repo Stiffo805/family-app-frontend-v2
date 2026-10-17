@@ -9,11 +9,18 @@ import { Modal } from '@src/app/components/core/modal/modal'
 import {
   getAllShoppingListsMainQueryKey,
   getLatestChangelogEntriesMainQueryKey,
+  getProductsMainQueryKey,
   getUsernameQueryKey,
   LOCAL_STORAGE_SHOPPING_LISTS_KEY_NAME,
   LOCAL_STORAGE_USERNAME_KEY_NAME
 } from '@src/app/util/constants'
-import { ManageShoppingListFormData, FooterConfig, ShoppingList } from '@src/app/util/types'
+import {
+  ManageShoppingListFormData,
+  FooterConfig,
+  ShoppingList,
+  EditProductFormData,
+  Product
+} from '@src/app/util/types'
 import { form, FormField } from '@angular/forms/signals'
 import {
   injectMutation,
@@ -35,6 +42,7 @@ import {
 import { OfflineService } from '@src/app/services/offline.service'
 import { ChangelogService } from '@src/app/services/changelog.service'
 import { Spinner } from '@src/app/components/common/spinner/spinner'
+import { ProductService } from '@src/app/services/product.service'
 
 const availableChangelogItemsLimits: number[] = [3, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
 
@@ -126,10 +134,12 @@ const availableChangelogItemsLimits: number[] = [3, 10, 20, 30, 40, 50, 60, 70, 
                 <p [className]="'text-2xl text-blue1'">
                   <strong>{{ shoppingList?.title }}</strong>
                 </p>
-                <ng-icon
-                  name="bootstrapPencil"
-                  (click)="handleClickShoppingListEditIcon(shoppingList, $event)"
-                />
+                @if (!this.offlineService.isOfflineMode()) {
+                  <ng-icon
+                    name="bootstrapPencil"
+                    (click)="handleClickShoppingListEditIcon(shoppingList, $event)"
+                  />
+                }
               </div>
               <p [className]="'text-md'">
                 Data ostatniej modyfikacji:
@@ -147,6 +157,32 @@ const availableChangelogItemsLimits: number[] = [3, 10, 20, 30, 40, 50, 60, 70, 
       } @else {
         <app-spinner />
       }
+      <hr [className]="'mt-20'" />
+      <div [className]="'flex flex-col justify-center gap-2 items-center pb-6 pt-12'">
+        <h1 [className]="'text-center text-3xl font-semibold pb-4'">Wszystkie produkty</h1>
+        <div [className]="'bg-blue-200 w-[min(1000px,85vw)] rounded-lg'">
+          @for (product of productsSorted(); track product.id) {
+            <div [className]="'flex items-center py-2 px-6 text-lg not-last:border-b'">
+              <p [className]="'text-green1 font-bold'">{{ product.name }}</p>
+              <ng-icon
+                name="bootstrapPencil"
+                [className]="'ml-auto cursor-pointer'"
+                (click)="handleClickEditProductIcon(product)"
+              />
+            </div>
+          } @empty {
+            @if (offlineService.isOfflineMode()) {
+              <p [className]="'text-lg p-2 italic text-center'">
+                Niedostępne w trybie offline
+              </p>
+            } @else {
+              <p [className]="'text-lg p-2 italic text-center'">
+                Nie znaleziono żadnych utworzonych produktów
+              </p>
+            }
+          }
+        </div>
+      </div>
     </div>
     <app-modal
       [(open)]="changeUsernameModalOpen"
@@ -175,12 +211,28 @@ const availableChangelogItemsLimits: number[] = [3, 10, 20, 30, 40, 50, 60, 70, 
         <p [className]="'text-red-700 pt-2'">Istnieje już lista zakupów o tej nazwie</p>
       }
     </app-modal>
+    <app-modal
+      [(open)]="editProductModalOpen"
+      title="Edytowanie produktu"
+      [footer]="editProductFooter()"
+    >
+      <p [className]="'text-lg pb-2'">Nazwa produktu</p>
+      <input
+        [className]="'bg-white text-lg p-2 w-full'"
+        placeholder="podaj nazwę produktu"
+        [formField]="editProductForm.name"
+      />
+      @if (editProductMutation.isError()) {
+        <p [className]="'text-red-700 pt-2'">Istnieje już produkt o tej nazwie</p>
+      }
+    </app-modal>
   `,
   styleUrl: './dashboard-view.css'
 })
 export class DashboardView {
   layoutService = inject(LayoutService)
   shoppingListService = inject(ShoppingListService)
+  productService = inject(ProductService)
   changelogService = inject(ChangelogService)
   offlineService = inject(OfflineService)
 
@@ -236,12 +288,34 @@ export class DashboardView {
     }
   }))
 
+  allProductsQuery = injectQuery(() => ({
+    queryKey: [getProductsMainQueryKey, this.offlineService.isOfflineMode()],
+    queryFn: () => {
+      return this.productService.getAllProducts()
+    },
+    enabled: !this.offlineService.isOfflineMode()
+  }))
+
+  editProductMutation = injectMutation(() => ({
+    mutationFn: () => {
+      return this.productService.editProduct(this.editedProductId() ?? '', this.editProductModel())
+    },
+    onSuccess: () => {
+      this.editProductModalOpen.set(false)
+      this.queryClient.invalidateQueries({
+        queryKey: [getProductsMainQueryKey]
+      })
+    }
+  }))
+
   changelogItemsLimitIndex = signal<number>(0)
   shoppingListsSaved = signal<boolean>(false)
 
   changeUsernameModalOpen = signal<boolean>(false)
   manageShoppingListModalOpen = signal<boolean>(false)
+  editProductModalOpen = signal<boolean>(false)
   editedShoppingListId = signal<string | undefined>(undefined)
+  editedProductId = signal<string | undefined>(undefined)
 
   manageShoppingListModel = signal<ManageShoppingListFormData>({
     title: ''
@@ -251,8 +325,18 @@ export class DashboardView {
     username: this.getUsernameQuery.data() ?? ''
   }))
 
+  editProductModel = linkedSignal<EditProductFormData>(() => {
+    const data = this.allProductsQuery.data()
+    const currentId = this.editedProductId()
+
+    return {
+      name: data?.items.find((item) => item.id === currentId)?.name ?? ''
+    }
+  })
+
   usernameForm = form(this.usernameModel)
   manageShoppingListForm = form(this.manageShoppingListModel)
+  editProductForm = form(this.editProductModel)
 
   changelogItemsLimit = computed(
     () => availableChangelogItemsLimits[this.changelogItemsLimitIndex()]
@@ -269,6 +353,12 @@ export class DashboardView {
       .data()
       ?.items.map((item) => mapShoppingListRecordToShoppingList(item))
       .sort((list1, list2) => list1?.title.localeCompare(list2?.title ?? '') ?? 1)
+  )
+
+  productsSorted = computed(() =>
+    this.allProductsQuery
+      .data()
+      ?.items.sort((product1, product2) => product1.name.localeCompare(product2.name))
   )
 
   changeUsernameModalFooter: FooterConfig = {
@@ -319,6 +409,23 @@ export class DashboardView {
     ]
   }))
 
+  editProductFooter = linkedSignal<FooterConfig>(() => ({
+    rightButtons: [
+      {
+        text: 'Anuluj',
+        customClass: 'bg-red-700',
+        disabled: this.editProductMutation.isPending(),
+        click: () => this.editProductModalOpen.set(false)
+      },
+      {
+        text: 'Zapisz',
+        customClass: 'bg-green2',
+        disabled: this.editProductMutation.isPending() || !this.editProductModel().name,
+        click: () => this.editProductMutation.mutate()
+      }
+    ]
+  }))
+
   saveShoppingListsToLocalStorage = () => {
     localStorage.setItem(
       LOCAL_STORAGE_SHOPPING_LISTS_KEY_NAME,
@@ -355,6 +462,11 @@ export class DashboardView {
     this.manageShoppingListModalOpen.set(true)
   }
 
+  handleClickEditProductIcon = (product: Product) => {
+    this.editedProductId.set(product.id)
+    this.editProductModalOpen.set(true)
+  }
+
   formatDatetimeHelper = formatDatetime
 
   constructor() {
@@ -365,6 +477,15 @@ export class DashboardView {
         this.editedShoppingListId.set(undefined)
         this.manageShoppingListModel.set({
           title: ''
+        })
+      }
+    })
+
+    effect(() => {
+      if (!this.editProductModalOpen()) {
+        this.editedProductId.set(undefined)
+        this.editProductModel.set({
+          name: ''
         })
       }
     })

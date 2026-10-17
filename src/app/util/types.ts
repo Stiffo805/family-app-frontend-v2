@@ -103,6 +103,10 @@ export type CreateNewProductFormData = {
   name: string
 }
 
+export type EditProductFormData = {
+  name: string
+}
+
 export type CheckShoppingListEntryFormData = {
   entryId: string
   checked: boolean
