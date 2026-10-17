@@ -49,8 +49,6 @@ import {
   CdkDropList,
   moveItemInArray
 } from '@angular/cdk/drag-drop'
-import jsPDF from 'jspdf'
-import html2canvas from 'html2canvas'
 
 type AvailableSorting = {
   label: string
@@ -444,6 +442,10 @@ export class ShoppingListView {
     }
 
     try {
+      // Dynamically load the libraries only when this function is executed
+      const html2canvas = (await import('html2canvas')).default
+      const jsPDF = (await import('jspdf')).default
+
       // 1. Generate canvas from the HTML element
       const canvas = await html2canvas(element, { scale: 2 })
       const imgData = canvas.toDataURL('image/png')
