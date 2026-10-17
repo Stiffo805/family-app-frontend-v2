@@ -8,6 +8,7 @@ import {
   linkedSignal,
   signal,
   untracked,
+  viewChild,
   viewChildren
 } from '@angular/core'
 import { NgIcon } from '@ng-icons/core'
@@ -48,6 +49,8 @@ import {
   CdkDropList,
   moveItemInArray
 } from '@angular/cdk/drag-drop'
+import jsPDF from 'jspdf'
+import html2canvas from 'html2canvas'
 
 type AvailableSorting = {
   label: string
@@ -88,7 +91,7 @@ const availableSorting: AvailableSorting[] = [
       @if (offlineService.isOfflineMode() || !getShoppingListQuery.isPending()) {
         <h1 [className]="'text-3xl font-bold pb-6'">{{ shoppingList()?.title }}</h1>
         <div [className]="'bg-white w-[90vw] max-w-220 rounded-lg'">
-          <div [className]="'flex p-4'">
+          <div [className]="'flex flex-col gap-4 p-4'">
             <app-primary-button
               text="Dodaj produkt"
               iconName="bootstrapPlusLg"
@@ -96,21 +99,29 @@ const availableSorting: AvailableSorting[] = [
               customClass="bg-green2"
               [disabled]="offlineService.isOfflineMode()"
             />
-          </div>
-          <div [className]="'p-4 pt-2'">
-            <div [className]="'flex flex-wrap gap-4 items-center'">
-              <app-primary-button
-                text="Przełącz sortowanie"
-                customClass="bg-amber-300"
-                (onClick)="changeCurrentSorting()"
-              />
-            </div>
-            <div [className]="'flex items-center pt-4'">
-              <i>Obecne sortowanie: {{ currentSorting().label }}</i>
-            </div>
+            <app-primary-button
+              text="Pobierz PDF"
+              iconName="primeDownload"
+              customClass="border-2 border-gray-300"
+              (onClick)="generatePdf()"
+              [disabled]="isGeneratingPdf()"
+            />
+
+            <app-primary-button
+              text="Przełącz sortowanie"
+              customClass="bg-amber-300"
+              (onClick)="changeCurrentSorting()"
+            />
+
+            <i>Obecne sortowanie: {{ currentSorting().label }}</i>
           </div>
           <hr />
-          <div cdkDropList (cdkDropListDropped)="drop($event)" [cdkDropListAutoScrollStep]="10">
+          <div
+            cdkDropList
+            (cdkDropListDropped)="drop($event)"
+            [cdkDropListAutoScrollStep]="10"
+            #pdfContent
+          >
             @for (entry of entriesSorted(); track entry.id; let isLast = $last) {
               <div
                 cdkDrag
@@ -119,13 +130,13 @@ const availableSorting: AvailableSorting[] = [
               >
                 <div
                   [ngClass]="{
-                    'p-4 flex items-center justify-between bg-white border-b': true,
+                    'p-4 flex items-center justify-between bg-[#ffffff] border-b border-[#e5e7eb]': true,
                     'opacity-50': entry.isChecked
                   }"
                 >
                   <div [className]="'max-w-[calc(100%-50px)]'">
-                    <p [className]="'flex flex-wrap text-xl'">
-                      <span [className]="'text-green1 font-bold'">{{ entry.product.name }}</span>
+                    <p [className]="'text-xl wrap-break-word'">
+                      <span [className]="'text-[#4d7c0f] font-bold'">{{ entry.product.name }}</span>
                       @if (entry.quantity) {
                         &nbsp;-&nbsp;
                         <span
@@ -136,8 +147,8 @@ const availableSorting: AvailableSorting[] = [
                         </span>
                       }
                     </p>
-                    <p [className]="'italic text-red-700'">{{ entry.extraNotes }}</p>
-                    <p [className]="'italic text-gray-700'">
+                    <p [className]="'italic text-[#b91c1c]'">{{ entry.extraNotes }}</p>
+                    <p [className]="'italic text-[#374151]'">
                       {{ formatDatetimeHelper(entry.lastUpdatedAt) }}
                     </p>
                   </div>
@@ -148,11 +159,11 @@ const availableSorting: AvailableSorting[] = [
                       [ngClass]="currentSorting().value === 'custom' ? 'flex' : 'hidden'"
                     >
                       <div
-                        class="absolute inset-0 bg-blue-200 rounded-full scale-0 opacity-0 transition-all duration-500 ease-linear group-active:scale-100 group-active:opacity-100"
+                        class="absolute inset-0 bg-[#bfdbfe] rounded-full scale-0 opacity-0 transition-all duration-500 ease-linear group-active:scale-100 group-active:opacity-100"
                       ></div>
                       <ng-icon
                         name="heroHandRaised"
-                        class="relative z-10 transition-colors duration-500 group-active:text-blue-700"
+                        class="relative z-10 transition-colors duration-500 group-active:text-[#1d4ed8]"
                       />
                     </div>
 
@@ -164,7 +175,7 @@ const availableSorting: AvailableSorting[] = [
                     <div
                       [ngClass]="[
                         'rounded-full w-10 h-10 relative flex items-center justify-center opacity-75 overflow-hidden',
-                        entry.isChecked ? 'bg-green-100' : 'bg-gray-100',
+                        entry.isChecked ? 'bg-[#dcfce3]' : 'bg-[#f3f4f6]',
                         animatedEntriesIds().includes(entry.id)
                           ? entry.isChecked
                             ? 'uncheck-anim'
@@ -175,16 +186,10 @@ const availableSorting: AvailableSorting[] = [
                     >
                       <ng-icon
                         name="heroCheck"
-                        [ngClass]="[entry.isChecked ? 'text-green-500!' : 'text-gray-400!', 'z-5']"
+                        [ngClass]="[entry.isChecked ? 'text-[#22c55e]!' : 'text-[#9ca3af]!', 'z-5']"
                         strokeWidth="3"
                       />
                     </div>
-                    <!-- <input
-                      [type]="'checkbox'"
-                      [className]="'size-6'"
-                      [checked]="entry.isChecked"
-                      (click)="handleClickCheck($event, entry)"
-                    /> -->
                   </div>
                 </div>
               </div>
@@ -424,5 +429,52 @@ export class ShoppingListView {
       }
     })
     this.shoppingListService.fillMissingEntriesPositions()
+  }
+
+  isGeneratingPdf = signal<boolean>(false)
+  pdfContent = viewChild<ElementRef<HTMLDivElement>>('pdfContent')
+
+  generatePdf = async () => {
+    this.isGeneratingPdf.set(true)
+    const element = this.pdfContent()?.nativeElement
+
+    if (!element) {
+      this.isGeneratingPdf.set(false)
+      return
+    }
+
+    try {
+      // 1. Generate canvas from the HTML element
+      const canvas = await html2canvas(element, { scale: 2 })
+      const imgData = canvas.toDataURL('image/png')
+
+      // 2. Set constant width (210mm is standard A4 width)
+      const pdfWidth = 210
+
+      // 3. Calculate dynamic height based on the canvas proportions
+      const calculatedHeight = (canvas.height * pdfWidth) / canvas.width
+
+      // 4. Ensure minimum height matches standard A4 height (297mm)
+      // This prevents the PDF from looking like a horizontal strip for short lists
+      const pdfHeight = Math.max(calculatedHeight, 297)
+
+      // 5. Create jsPDF instance with custom dimensions
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: [pdfWidth, pdfHeight]
+      })
+
+      // 6. Add the image starting from top-left (0,0)
+      // Note: We use calculatedHeight for the image drawing to avoid vertical stretching!
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, calculatedHeight)
+
+      // 7. Save the file
+      pdf.save(`zakupy-${this.shoppingList()?.title || 'lista'}.pdf`)
+    } catch (error) {
+      console.error('Error generating PDF:', error)
+    } finally {
+      this.isGeneratingPdf.set(false)
+    }
   }
 }

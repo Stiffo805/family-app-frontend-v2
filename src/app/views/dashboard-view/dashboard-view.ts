@@ -10,6 +10,7 @@ import {
   getAllShoppingListsMainQueryKey,
   getLatestChangelogEntriesMainQueryKey,
   getProductsMainQueryKey,
+  getShoppingListMainQueryKey,
   getUsernameQueryKey,
   LOCAL_STORAGE_SHOPPING_LISTS_KEY_NAME,
   LOCAL_STORAGE_USERNAME_KEY_NAME
@@ -304,6 +305,9 @@ export class DashboardView {
       this.queryClient.invalidateQueries({
         queryKey: [getProductsMainQueryKey]
       })
+      this.queryClient.invalidateQueries({
+        queryKey: [getShoppingListMainQueryKey]
+      })
     }
   }))
 
@@ -396,7 +400,7 @@ export class DashboardView {
       {
         text: this.editedShoppingListId() ? 'Zapisz' : 'Utwórz',
         customClass: 'bg-green2',
-        disabled: this.createShoppingListMutation.isPending(),
+        disabled: this.createShoppingListMutation.isPending() || !this.manageShoppingListModel().title,
         click: () => {
           if (this.editedShoppingListId()) {
             this.editShoppingListMutation.mutate()

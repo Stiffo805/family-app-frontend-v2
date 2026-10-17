@@ -20,6 +20,7 @@ import { TestConnectionView } from './views/test-connection-view/test-connection
 import { primeSpinner } from '@ng-icons/primeicons'
 import { heroChevronDoubleUpMicro } from '@ng-icons/heroicons/micro'
 import { heroCheck } from '@ng-icons/heroicons/outline';
+import { primeDownload } from '@ng-icons/primeicons';
 
 @Component({
   selector: 'app-root',
@@ -44,7 +45,8 @@ import { heroCheck } from '@ng-icons/heroicons/outline';
       bootstrapGlobe,
       heroChevronDoubleUpMicro,
       heroHandRaised,
-      heroCheck
+      heroCheck,
+      primeDownload
     })
   ]
 })
