@@ -55,7 +55,8 @@ const availableChangelogItemsLimits: number[] = [3, 10, 20, 30, 40, 50, 60, 70, 
         offlineService.isOfflineMode() ||
         (!getUsernameQuery.isPending() &&
           !latestChangelogEntriesQuery.isPending() &&
-          !shoppingListsQuery.isPending())
+          !shoppingListsQuery.isPending() &&
+          !allProductsQuery.isPending())
       ) {
         <div [className]="'p-4 flex gap-2 items-center'">
           <p>
@@ -172,9 +173,7 @@ const availableChangelogItemsLimits: number[] = [3, 10, 20, 30, 40, 50, 60, 70, 
             </div>
           } @empty {
             @if (offlineService.isOfflineMode()) {
-              <p [className]="'text-lg p-2 italic text-center'">
-                Niedostępne w trybie offline
-              </p>
+              <p [className]="'text-lg p-2 italic text-center'">Niedostępne w trybie offline</p>
             } @else {
               <p [className]="'text-lg p-2 italic text-center'">
                 Nie znaleziono żadnych utworzonych produktów
