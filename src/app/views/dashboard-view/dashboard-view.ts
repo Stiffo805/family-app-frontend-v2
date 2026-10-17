@@ -155,33 +155,33 @@ const availableChangelogItemsLimits: number[] = [3, 10, 20, 30, 40, 50, 60, 70, 
             </p>
           }
         </div>
+        <hr [className]="'mt-20'" />
+        <div [className]="'flex flex-col justify-center gap-2 items-center pb-6 pt-12'">
+          <h1 [className]="'text-center text-3xl font-semibold pb-4'">Wszystkie produkty</h1>
+          <div [className]="'bg-blue-200 w-[min(1000px,85vw)] rounded-lg'">
+            @for (product of productsSorted(); track product.id) {
+              <div [className]="'flex items-center py-2 px-6 text-lg not-last:border-b'">
+                <p [className]="'text-green1 font-bold'">{{ product.name }}</p>
+                <ng-icon
+                  name="bootstrapPencil"
+                  [className]="'ml-auto cursor-pointer'"
+                  (click)="handleClickEditProductIcon(product)"
+                />
+              </div>
+            } @empty {
+              @if (offlineService.isOfflineMode()) {
+                <p [className]="'text-lg p-2 italic text-center'">Niedostępne w trybie offline</p>
+              } @else {
+                <p [className]="'text-lg p-2 italic text-center'">
+                  Nie znaleziono żadnych utworzonych produktów
+                </p>
+              }
+            }
+          </div>
+        </div>
       } @else {
         <app-spinner />
       }
-      <hr [className]="'mt-20'" />
-      <div [className]="'flex flex-col justify-center gap-2 items-center pb-6 pt-12'">
-        <h1 [className]="'text-center text-3xl font-semibold pb-4'">Wszystkie produkty</h1>
-        <div [className]="'bg-blue-200 w-[min(1000px,85vw)] rounded-lg'">
-          @for (product of productsSorted(); track product.id) {
-            <div [className]="'flex items-center py-2 px-6 text-lg not-last:border-b'">
-              <p [className]="'text-green1 font-bold'">{{ product.name }}</p>
-              <ng-icon
-                name="bootstrapPencil"
-                [className]="'ml-auto cursor-pointer'"
-                (click)="handleClickEditProductIcon(product)"
-              />
-            </div>
-          } @empty {
-            @if (offlineService.isOfflineMode()) {
-              <p [className]="'text-lg p-2 italic text-center'">Niedostępne w trybie offline</p>
-            } @else {
-              <p [className]="'text-lg p-2 italic text-center'">
-                Nie znaleziono żadnych utworzonych produktów
-              </p>
-            }
-          }
-        </div>
-      </div>
     </div>
     <app-modal
       [(open)]="changeUsernameModalOpen"
