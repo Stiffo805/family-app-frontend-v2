@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+@keyframes growUp {
+  0% {
+    height: 0;
+  } 
+
+  100% {
+    height: 240px;
+  }
+}
+
+.check-anim::before {
+  @apply bg-green-100 border-t-2 border-t-green-200;
+
+  content: "";
+  position: absolute;
+  width: 100%;
+  left: 0;
+  bottom: 0;
+  z-index: 3;
+  animation-name: growUp;
+  animation-iteration-count: 1;
+  animation-duration: 6s;
+}
+
+.uncheck-anim::before {
+  @apply bg-gray-100 border-t-2 border-t-gray-200;
+
+  content: "";
+  position: absolute;
+  width: 100%;
+  left: 0;
+  bottom: 0;
+  z-index: 3;
+  animation-name: growUp;
+  animation-iteration-count: 1;
+  animation-duration: 6s;
+}

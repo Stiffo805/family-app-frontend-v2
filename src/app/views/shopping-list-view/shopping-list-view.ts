@@ -7,6 +7,7 @@ import {
   input,
   linkedSignal,
   signal,
+  untracked,
   viewChildren
 } from '@angular/core'
 import { NgIcon } from '@ng-icons/core'
@@ -160,12 +161,29 @@ const availableSorting: AvailableSorting[] = [
                       [className]="'cursor-pointer'"
                       (click)="handleEditEntryClick(entry)"
                     />
-                    <input
+                    <div
+                      [ngClass]="[
+                        'rounded-full w-10 h-10 relative flex items-center justify-center opacity-75 overflow-hidden',
+                        entry.isChecked ? 'bg-green-100' : 'bg-gray-100',
+                        animatedEntriesIds().includes(entry.id)
+                          ? entry.isChecked
+                            ? 'uncheck-anim'
+                            : 'check-anim'
+                          : ''
+                      ]"
+                      (click)="handleClickCheck(entry)"
+                    >
+                      <ng-icon
+                        name="heroCheck"
+                        [ngClass]="[entry.isChecked ? 'text-green-500!' : 'text-gray-500!', 'z-5']"
+                      />
+                    </div>
+                    <!-- <input
                       [type]="'checkbox'"
                       [className]="'size-6'"
                       [checked]="entry.isChecked"
                       (click)="handleClickCheck($event, entry)"
-                    />
+                    /> -->
                   </div>
                 </div>
               </div>
@@ -276,6 +294,10 @@ export class ShoppingListView {
   entryEditionModalOpen = signal<boolean>(false)
   editedEntry = signal<ShoppingListEntry | undefined>(undefined)
 
+  animatedEntries = signal<{ entryId: string; timeoutId: number }[]>([])
+
+  animatedEntriesIds = computed(() => this.animatedEntries().map((item) => item.entryId))
+
   entryAdditionModel = linkedSignal<AddProductToListFormData>(() => ({
     ...defaultAddProductToListFormData,
     shoppingListId: this.id() ?? null
@@ -342,10 +364,24 @@ export class ShoppingListView {
     }
   }
 
-  handleClickCheck(event: Event, entry: ShoppingListEntry) {
-    event.preventDefault()
+  handleClickCheck(entry: ShoppingListEntry) {
     if (!this.offlineService.isOfflineMode()) {
-      this.checkEntryMutation.mutate({ entryId: entry.id, checked: !entry.isChecked })
+      if (!this.animatedEntriesIds().includes(entry.id)) {
+        const timeoutId = setTimeout(() => {
+          this.animatedEntries.update((cur) => cur.filter((item) => item.entryId !== entry.id))
+          this.checkEntryMutation.mutate({ entryId: entry.id, checked: !entry.isChecked })
+        }, 1000)
+        this.animatedEntries.update((cur) => [
+          ...cur,
+          {
+            entryId: entry.id,
+            timeoutId
+          }
+        ])
+      } else {
+        clearTimeout(this.animatedEntries().find((item) => item.entryId === entry.id)?.timeoutId)
+        this.animatedEntries.update((cur) => cur.filter((item) => item.entryId !== entry.id))
+      }
     }
   }
 

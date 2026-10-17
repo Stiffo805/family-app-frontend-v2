@@ -19,6 +19,7 @@ import { ionLogOutOutline } from '@ng-icons/ionicons'
 import { TestConnectionView } from './views/test-connection-view/test-connection-view'
 import { primeSpinner } from '@ng-icons/primeicons'
 import { heroChevronDoubleUpMicro } from '@ng-icons/heroicons/micro'
+import { heroCheck } from '@ng-icons/heroicons/outline';
 
 @Component({
   selector: 'app-root',
@@ -42,7 +43,8 @@ import { heroChevronDoubleUpMicro } from '@ng-icons/heroicons/micro'
       primeSpinner,
       bootstrapGlobe,
       heroChevronDoubleUpMicro,
-      heroHandRaised
+      heroHandRaised,
+      heroCheck
     })
   ]
 })
