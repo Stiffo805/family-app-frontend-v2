@@ -125,6 +125,9 @@ const availableSorting: AvailableSorting[] = [
                 cdkDrag
                 [cdkDragDisabled]="currentSorting().value !== 'custom'"
                 [cdkDragStartDelay]="{ touch: 500, mouse: 0 }"
+                #entryItem
+                [attr.product-id]="entry.product.id"
+                class="scroll-mt-20"
               >
                 <div
                   [ngClass]="{
@@ -212,6 +215,7 @@ const availableSorting: AvailableSorting[] = [
       [(open)]="productChoiceModalOpen"
       [shoppingListData]="shoppingList()"
       [(productAdditionModel)]="entryAdditionModel"
+      [onExistingProductClick]="handleExistingProductChoiceEntryClick"
     />
     <app-entry-edition-modal
       [(open)]="entryEditionModalOpen"
@@ -291,6 +295,8 @@ export class ShoppingListView {
     }
   }))
 
+  entryItems = viewChildren<ElementRef<HTMLDivElement>>('entryItem')
+
   currentSortingIndex = signal<number>(0)
 
   entryAdditionModalOpen = signal<boolean>(false)
@@ -366,6 +372,16 @@ export class ShoppingListView {
       this.editedEntry.set(entry)
       this.entryEditionModalOpen.set(true)
     }
+  }
+
+  handleExistingProductChoiceEntryClick = (productId: string) => {
+    const target = this.entryItems().find(
+      (el) => el.nativeElement.getAttribute('product-id') === productId
+    )
+    this.productChoiceModalOpen.set(false)
+    this.entryAdditionModalOpen.set(false)
+
+    target?.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }
 
   handleClickCheck(entry: ShoppingListEntry) {

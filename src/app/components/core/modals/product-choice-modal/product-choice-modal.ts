@@ -11,7 +11,8 @@ import {
   AddProductToListFormData,
   ShoppingListRecord,
   Product,
-  ShoppingList
+  ShoppingList,
+  ShoppingListEntry
 } from '@src/app/util/types'
 import { injectMutation, injectQuery, QueryClient } from '@tanstack/angular-query-experimental'
 
@@ -103,6 +104,7 @@ export class ProductChoiceModal {
   open = model.required<boolean>()
   shoppingListData = input<ShoppingList>()
   productAdditionModel = model.required<AddProductToListFormData>()
+  onExistingProductClick = input.required<(productId: string) => void>()
 
   searchText = signal<string>('')
 
@@ -145,6 +147,8 @@ export class ProductChoiceModal {
     if (!this.isProductOnList(product)) {
       this.saveProductIdToForm(product.id)
       this.open.set(false)
+    } else {
+      this.onExistingProductClick()?.(product.id)
     }
   }
 
