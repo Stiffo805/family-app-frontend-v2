@@ -49,6 +49,7 @@ import {
   CdkDropList,
   moveItemInArray
 } from '@angular/cdk/drag-drop'
+import { Content, TDocumentDefinitions } from 'pdfmake/interfaces'
 
 type AvailableSorting = {
   label: string
@@ -98,10 +99,17 @@ const availableSorting: AvailableSorting[] = [
               [disabled]="offlineService.isOfflineMode()"
             />
             <app-primary-button
-              text="Pobierz PDF"
+              text="PDF na urządzenie (wszystkie produkty)"
               iconName="primeDownload"
               customClass="border-2 border-gray-300"
-              (onClick)="generatePdf()"
+              (onClick)="generatePdfAll()"
+              [disabled]="isGeneratingPdf()"
+            />
+            <app-primary-button
+              text="PDF do druku (tylko produkty do kupienia)"
+              iconName="primeDownload"
+              customClass="border-2 border-gray-300"
+              (onClick)="generatePdfToBuy()"
               [disabled]="isGeneratingPdf()"
             />
 
@@ -304,7 +312,7 @@ export class ShoppingListView {
   entryEditionModalOpen = signal<boolean>(false)
   editedEntry = signal<ShoppingListEntry | undefined>(undefined)
 
-  animatedEntries = signal<{ entryId: string; timeoutId: number }[]>([])
+  animatedEntries = signal<{ entryId: string; timeoutId: ReturnType<typeof setTimeout> }[]>([])
 
   animatedEntriesIds = computed(() => this.animatedEntries().map((item) => item.entryId))
 
@@ -448,7 +456,7 @@ export class ShoppingListView {
   isGeneratingPdf = signal<boolean>(false)
   pdfContent = viewChild<ElementRef<HTMLDivElement>>('pdfContent')
 
-  generatePdf = async () => {
+  generatePdfAll = async () => {
     this.isGeneratingPdf.set(true)
     const element = this.pdfContent()?.nativeElement
 
@@ -491,6 +499,85 @@ export class ShoppingListView {
       pdf.save(`zakupy-${this.shoppingList()?.title || 'lista'}.pdf`)
     } catch (error) {
       console.error('Error generating PDF:', error)
+    } finally {
+      this.isGeneratingPdf.set(false)
+    }
+  }
+
+  generatePdfToBuy = async () => {
+    this.isGeneratingPdf.set(true)
+
+    try {
+      const pdfMakeModule = await import('pdfmake/build/pdfmake')
+      const pdfFontsModule = await import('pdfmake/build/vfs_fonts')
+
+      const pdfMake = pdfMakeModule.default || pdfMakeModule
+      const pdfFonts = pdfFontsModule.default || pdfFontsModule
+
+      pdfMake.addVirtualFileSystem(pdfFonts)
+
+      const entriesToBuy = this.entriesSorted().filter((entry) => !entry.isChecked)
+
+      // Dynamically pick column count based on list length
+      const columnCount = entriesToBuy.length > 56 ? 3 : entriesToBuy.length > 28 ? 2 : 1
+      const itemsPerColumn = Math.ceil(entriesToBuy.length / columnCount)
+
+      // Split items into vertical columns (easier to read top-to-bottom)
+      const columns: Content[] = Array.from({ length: columnCount }, (_, colIndex) => {
+        const slice = entriesToBuy.slice(colIndex * itemsPerColumn, (colIndex + 1) * itemsPerColumn)
+
+        return {
+          stack: slice.map((entry) => ({
+            stack: [
+              {
+                text: [
+                  { text: '• ', color: '#9ca3af' },
+                  { text: entry.product.name, bold: true, color: '#4d7c0f' },
+                  entry.quantity ? ` - ${entry.quantity}${entry.unit ? ` ${entry.unit}` : ''}` : ''
+                ],
+                fontSize: 13
+              },
+              ...(entry.extraNotes
+                ? [
+                    {
+                      text: entry.extraNotes,
+                      italics: true,
+                      color: '#b91c1c',
+                      fontSize: 9,
+                      margin: [8, 1, 0, 0] as [number, number, number, number]
+                    }
+                  ]
+                : [])
+            ],
+            margin: [0, 0, 0, 5] as [number, number, number, number],
+            unbreakable: true
+          }))
+        }
+      })
+
+      const docDefinition: TDocumentDefinitions = {
+        pageSize: 'A4',
+        // Tighter margins for print (left, top, right, bottom)
+        pageMargins: [20, 20, 20, 20],
+        content: [
+          { text: this.shoppingList()?.title || 'Shopping List', style: 'header' },
+          {
+            columns,
+            columnGap: 14
+          }
+        ],
+        styles: {
+          header: {
+            fontSize: 15,
+            bold: true,
+            margin: [0, 0, 0, 10]
+          }
+        }
+      }
+
+      pdfMake
+        .createPdf(docDefinition)
+        .download(`zakupy-${this.shoppingList()?.title || 'lista'}.pdf`)
     } finally {
       this.isGeneratingPdf.set(false)
     }
