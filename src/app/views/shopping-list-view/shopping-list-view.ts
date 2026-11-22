@@ -531,8 +531,8 @@ export class ShoppingListView {
             stack: [
               {
                 text: [
-                  { text: '• ', color: '#9ca3af' },
-                  { text: entry.product.name, bold: true, color: '#4d7c0f' },
+                  { text: '• ' },
+                  { text: entry.product.name, bold: true },
                   entry.quantity ? ` - ${entry.quantity}${entry.unit ? ` ${entry.unit}` : ''}` : ''
                 ],
                 fontSize: 13
@@ -542,7 +542,7 @@ export class ShoppingListView {
                     {
                       text: entry.extraNotes,
                       italics: true,
-                      color: '#b91c1c',
+                      color: '#454545',
                       fontSize: 9,
                       margin: [8, 1, 0, 0] as [number, number, number, number]
                     }
